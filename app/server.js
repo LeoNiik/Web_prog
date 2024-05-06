@@ -2,14 +2,21 @@
 const path = require('path');
 const express = require('express');
 const axios = require('axios');
+const { Client } = require('pg');
 var aes256 = require('aes256');
 
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
 
-// App
-
+// DB connection
+const client = new Client({
+	user: 'postgres',
+	password: 'password',
+	host: '172.24.0.1',
+	port: 3306,
+	database: 'prova',
+});
 
 const app = express();
 
