@@ -17,9 +17,5 @@ services:
       - "8000:80"
     expose:
       - '8000'
-networks:
-  network1:
-    name: app_default
-    external: true
 volumes:
   data:
