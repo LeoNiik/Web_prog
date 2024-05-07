@@ -29,4 +29,3 @@ networks:
 
 volumes:
   data:
-
