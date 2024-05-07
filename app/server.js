@@ -13,10 +13,20 @@ const HOST = '0.0.0.0';
 const client = new Client({
 	user: 'postgres',
 	password: 'password',
-	host: '172.24.0.1',
-	port: 3306,
+	host: '172.25.0.1',
+	port: 5433,
 	database: 'prova',
 });
+
+client
+	.connect()
+	.then(() => {
+		console.log('Connected to PostgreSQL database');
+	})
+	.catch((err) => {
+		console.error('Error connecting to PostgreSQL database', err);
+	});
+
 
 const app = express();
 

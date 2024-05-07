@@ -6,19 +6,23 @@ services:
       POSTGRES_USER: 'postgres'
       POSTGRES_PASSWORD: 'password'
     ports:
-      - '3306:3306'
+      - '5433:5432'
     expose:
-      - '3306'
+      - '5432'
     volumes:
       - data:/var/lib/postgresql/data
+    networks:
+      - appnet
   app:
     build: ./app
     ports:
       - "8000:80"
     expose:
       - '8000'
+    networks:
+      - appnet
 networks:
-  network1:
+  appnet:
     name: app_default
     external: true
 volumes:

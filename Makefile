@@ -8,3 +8,6 @@ down:
 restart:
 	sudo docker compose down
 	sudo docker compose up -d --build
+
+logs:
+	sudo docker logs web_prog-app-1
