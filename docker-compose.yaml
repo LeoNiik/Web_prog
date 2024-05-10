@@ -13,7 +13,7 @@ services:
       - data:/var/lib/postgresql/data
       - ./db.sql:/docker-entrypoint-initdb.d/0_init.sql
     networks:
-      - appnet
+      - appnetwork
   app:
     build: ./app
     ports:
@@ -21,10 +21,10 @@ services:
     expose:
       - '8000'
     networks:
-      - appnet
+      - appnetwork
 
 networks:
-  appnet:
+  appnetwork:
     name: app_default
     external: true
 

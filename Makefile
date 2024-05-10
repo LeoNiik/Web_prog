@@ -11,3 +11,9 @@ restart:
 
 logs:
 	sudo docker logs web_prog-app-1
+
+execsrv:
+	sudo docker exec -it web_prog-app-1 bash
+
+execdb:
+	sudo docker exec -it web_prog-app-db-1 bash
