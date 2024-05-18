@@ -15,7 +15,7 @@ const client = new Client({
 	password: 'password',
 	host: '172.25.0.1',
 	port: 5433,
-	database: 'prova',
+	database: 'esempio',
 });
 
 client
@@ -31,6 +31,8 @@ client
 const app = express();
 
 app.use(express.static('public'));
+app.use(express.static('src'));
+
 app.get('/example', async (req, res) => {
 
     axios.get('http://host:8080/secret')
@@ -45,7 +47,7 @@ app.get('/example', async (req, res) => {
 
 //send index.html as response for GET /
 app.get('/', function(req, res) {
-  res.sendFile(path.join(__dirname, 'views/index.html'));
+  res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 

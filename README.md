@@ -16,3 +16,6 @@ Per riavviare i container:
 
     make restart
 
+Per visualizzare eventuali messaggi di errore:
+
+    make logs
