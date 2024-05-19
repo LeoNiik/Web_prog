@@ -5,36 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello, World!</title>
     <link rel="stylesheet" href="style.css">
+    <script src="prova.js"></script>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel="stylesheet">
 
 </head>
 <body>
     <div class="wrapper">
-        <form id="login-form" class="login-form" action="/login" method="post">
-            <h1>Login</h1>
-            
-            <div class="input-box">
-                <input type="text" placeholder="Insert username"></input>
-                <i class='bx bxs-user'></i>
-            </div>
-
-            <div class="input-box">
-                <input type="password" placeholder="Insert password"></input>
-                <i class='bx bxs-lock-alt'></i>
-            </div>
-
-            <div class="remember-forgot">
-                <label><input type="checkbox">Remember me</input></label>
-                <a href="#">Forgot password?</a>
-            </div>
-
-            <button type="submit" class="btn">Login</button>
-
-            <div class="register-link">
-                <p>No account? <a href="#">sign up</a></p>
-            </div>
+        <h1>Login</h1>
         
-        </form>    
+        <div class="input-box">
+            <input type="text" placeholder="Insert username" id="username"></input>
+            <i class='bx bxs-user'></i>
+        </div>
+
+        <div class="input-box">
+            <input type="password" placeholder="Insert password" id="password"></input>
+            <i class='bx bxs-lock-alt'></i>
+        </div>
+
+        <div class="remember-forgot">
+            <label><input type="checkbox">Remember me</input></label>
+            <a href="#">Forgot password?</a>
+        </div>
+
+        <button class="btn" id="login-btn" onclick="loginHandler()">Login</button>
+
+        <div class="register-link">
+            <p>No account? <a href="/signup">sign up</a></p>
+        </div>        
     </div>
 </body>
 </html>

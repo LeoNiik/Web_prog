@@ -3,7 +3,8 @@ const path = require('path');
 const express = require('express');
 const axios = require('axios');
 const { Client } = require('pg');
-var aes256 = require('aes256');
+var bodyParser = require('body-parser')
+
 
 // Constants
 const PORT = 80;
@@ -32,8 +33,17 @@ const app = express();
 
 app.use(express.static('public'));
 app.use(express.static('src'));
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }))
 
-app.post('/login',(req,res) => {
+// parse application/json
+app.use(bodyParser.json())
+
+// create application/json parser
+var jsonParser = bodyParser.json()
+ 
+// create application/x-www-form-urlencoded parser
+app.post('/login', (req,res) => {
 	
 });
 
@@ -66,39 +76,42 @@ app.get('/', function(req, res) {
 
 
 
-// Placeholder for POST /login route
-app.post('/login', async (req, res) => {
+// Placeholder for POST /api/login route
+app.post('/api/login', async (req, res) => {
+	
 	// Handle login logic here
-	const { username, password } = req.body;
-	try {
+	console.log(req.body)
 
-		if (!username || !password) {
-			return res.status(400).send('Username e password sono obbligatori');
-		}
+	const { username, password } = req.body;
+	// try {
+
+	// 	if (!username || !password) {
+	// 		return res.status(400).send('Username e password sono obbligatori');
+	// 	}
 	
-		// Cerca l'utente nel database
-		const result = client.query('SELECT * FROM Users WHERE username = $1', [username]);
-		const user = result.rows[0];
+	// 	// Cerca l'utente nel database
+	// 	const result = client.query('SELECT * FROM Users WHERE username = $1', [username]);
+	// 	const user = result.rows[0];
 	
-		// Verifica che l'utente esista
-		if (!user) {
-			return res.status(401).send('Credenziali non valide');
-		}
+	// 	// Verifica che l'utente esista
+	// 	if (!user) {
+	// 		return res.status(401).send('Credenziali non valide');
+	// 	}
 	
-		// Confronta la password inserita con quella salvata nel database
-		const isPasswordValid = await bcrypt.compare(password, user.password);
-		if (!isPasswordValid) {
-			return res.status(401).send('Credenziali non valide');
-		}
+	// 	// Confronta la password inserita con quella salvata nel database
+	// 	const isPasswordValid = await bcrypt.compare(password, user.password);
+	// 	if (!isPasswordValid) {
+	// 		return res.status(401).send('Credenziali non valide');
+	// 	}
 	
-		// Se le credenziali sono valide, autentica l'utente (puoi usare JWT o sessioni)
-		res.status(200).send('Login effettuato con successo');
+	// 	// Se le credenziali sono valide, autentica l'utente (puoi usare JWT o sessioni)
+	// 	res.status(200).send('Login effettuato con successo');
   
-	} catch (error) {
-	  console.error('Errore durante il login:', error);
-	  res.status(500).send('Errore interno del server');
-	}
-	res.sendFile(path.join(__dirname, 'public/hello_world.html'));
+	// } catch (error) {
+	//   console.error('Errore durante il login:', error);
+	//   res.status(500).send('Errore interno del server');
+	// }
+	 await res.status(200).send({username,password});
 });
 
 // Placeholder for POST /signup route
