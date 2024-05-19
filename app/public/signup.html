@@ -22,18 +22,23 @@
             <input type="password" placeholder="Insert password" id="password"></input>
             <i class='bx bxs-lock-alt'></i>
         </div>
+        
+        <div class="input-box">
+            <input type="password" placeholder="confirm password" id="conf-password"></input>
+            <i class='bx bxs-lock-alt'></i>
+        </div>
 
         <div class="remember-forgot">
             <label><input type="checkbox">Remember me</input></label>
             <a href="#">Forgot password?</a>
         </div>
 
-        <button class="btn" id="login-btn" onclick="loginHandler()">Login</button>
+        <button class="btn" id="login-btn" onclick="signupHandler()">Login</button>
         
         <div class="err-text">
             <label id="err-text"></label>
         </div>
-        
+
         <div class="register-link">
             <p>No account? <a href="/signup">sign up</a></p>
         </div>        

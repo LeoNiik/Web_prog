@@ -39,18 +39,7 @@ app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 app.use(bodyParser.json())
 
-// create application/json parser
-var jsonParser = bodyParser.json()
- 
-// create application/x-www-form-urlencoded parser
-app.post('/login', (req,res) => {
-	
-});
 
-// app.post("/api/post/message", (res,res) =>{
-
-
-// });
 
 // app.get("/api/get/convs/:id", async (req, res) => {
 	
@@ -83,39 +72,39 @@ app.post('/api/login', async (req, res) => {
 	console.log(req.body)
 
 	const { username, password } = req.body;
-	// try {
+	try {
 
-	// 	if (!username || !password) {
-	// 		return res.status(400).send('Username e password sono obbligatori');
-	// 	}
+		if (!username || !password) {
+			return res.status(400).send('Username e password sono obbligatori');
+		}
 	
-	// 	// Cerca l'utente nel database
-	// 	const result = client.query('SELECT * FROM Users WHERE username = $1', [username]);
-	// 	const user = result.rows[0];
+		// Cerca l'utente nel database
+		const result = client.query('SELECT * FROM Users WHERE username = $1', [username]);
+		const user = result.rows[0];
 	
-	// 	// Verifica che l'utente esista
-	// 	if (!user) {
-	// 		return res.status(401).send('Credenziali non valide');
-	// 	}
+		// Verifica che l'utente esista
+		if (!user) {
+			return res.status(401).send('Credenziali non valide');
+		}
 	
-	// 	// Confronta la password inserita con quella salvata nel database
-	// 	const isPasswordValid = await bcrypt.compare(password, user.password);
-	// 	if (!isPasswordValid) {
-	// 		return res.status(401).send('Credenziali non valide');
-	// 	}
+		// Confronta la password inserita con quella salvata nel database
+		const isPasswordValid = await bcrypt.compare(password, user.password);
+		if (!isPasswordValid) {
+			return res.status(401).send('Credenziali non valide');
+		}
 	
-	// 	// Se le credenziali sono valide, autentica l'utente (puoi usare JWT o sessioni)
-	// 	res.status(200).send('Login effettuato con successo');
+		// Se le credenziali sono valide, autentica l'utente (puoi usare JWT o sessioni)
+		res.status(200).send('Login effettuato con successo');
   
-	// } catch (error) {
-	//   console.error('Errore durante il login:', error);
-	//   res.status(500).send('Errore interno del server');
-	// }
-	 await res.status(200).send({username,password});
+	} catch (error) {
+	  console.error('Errore durante il login:', error);
+	  res.status(500).send('Errore interno del server');
+	}
+	res.status(200).send({status : "success	"});
 });
 
 // Placeholder for POST /signup route
-app.post('/signup', async (req, res) => {
+app.post('/api/signup', async (req, res) => {
 	const { username, password } = req.body;
 
 	try {
@@ -124,8 +113,8 @@ app.post('/signup', async (req, res) => {
   
 	  // Inserisci il nuovo utente nel database
 	  await client.query(
-		'INSERT INTO Users (username, password) VALUES ($1, $2, $3)',
-		[username, email, hashedPassword]
+		'INSERT INTO Users (username, password) VALUES ($1,$2,$3)',
+		[username,hashedPassword, Date.now()]
 	  );
   
 	  res.status(201).send('Registrazione avvenuta con successo');
@@ -141,6 +130,11 @@ app.post('/signup', async (req, res) => {
 app.get('/login', (req,res) => {
 	res.sendFile(path.join(__dirname, 'public/login.html'))
 });
+
+app.get('/signup', (req,res) => {
+	res.sendFile(path.join(__dirname, 'public/signup.html'))
+});
+
 app.get('/easter_egg', (req,res) => {
 	res.redirect('https://www.youtube.com/watch?v=2HKbbDukbJE&list=RD2HKbbDukbJE');
 });
@@ -151,10 +145,8 @@ app.listen(PORT, HOST);
 // CREATE TABLE Users (
 //     id SERIAL PRIMARY KEY,
 //     username VARCHAR(50) NOT NULL UNIQUE,
-//     email VARCHAR(100) NOT NULL UNIQUE,
 //     password VARCHAR(255) NOT NULL,
 //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 // );
 
 // CREATE TABLE Conversations (
