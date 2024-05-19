@@ -69,7 +69,6 @@ app.get('/', function(req, res) {
 app.post('/api/login', async (req, res) => {
 	
 	// Handle login logic here
-	console.log(req.body)
 
 	const { username, password } = req.body;
 	try {
@@ -81,30 +80,30 @@ app.post('/api/login', async (req, res) => {
 		// Cerca l'utente nel database
 		const result = client.query('SELECT * FROM Users WHERE username = $1', [username]);
 		const user = result.rows[0];
-	
+		
 		// Verifica che l'utente esista
 		if (!user) {
-			return res.status(401).send('Credenziali non valide');
+			return res.status(401).send({status : "wrong credentials"});
 		}
-	
+		
 		// Confronta la password inserita con quella salvata nel database
 		const isPasswordValid = await bcrypt.compare(password, user.password);
 		if (!isPasswordValid) {
-			return res.status(401).send('Credenziali non valide');
+			return res.status(401).send({status : "wrong credentials"});
 		}
-	
+		
 		// Se le credenziali sono valide, autentica l'utente (puoi usare JWT o sessioni)
-		res.status(200).send('Login effettuato con successo');
+		res.status(200).send({status : "success	"});
   
 	} catch (error) {
 	  console.error('Errore durante il login:', error);
-	  res.status(500).send('Errore interno del server');
+	  res.status(500).send({status : "internal error"});
 	}
-	res.status(200).send({status : "success	"});
 });
 
 // Placeholder for POST /signup route
 app.post('/api/signup', async (req, res) => {
+
 	const { username, password } = req.body;
 
 	try {
@@ -117,11 +116,11 @@ app.post('/api/signup', async (req, res) => {
 		[username,hashedPassword, Date.now()]
 	  );
   
-	  res.status(201).send('Registrazione avvenuta con successo');
+	  res.status(200).send({status : "success"});
   
 	} catch (error) {
 	  console.error('Errore durante la registrazione:', error);
-	  res.status(500).send('Errore interno del server');
+	  res.status(500).send({status : "internal error"});
 	}
 
 	res.sendFile(path.join(__dirname, 'public/index.html'));	
