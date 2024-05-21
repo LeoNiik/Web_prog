@@ -85,7 +85,7 @@ app.get("/api/convs/:id", async (req, res) => {
 		});
 	});
 });
-
+		
 app.get("/api/chat/:id", async (req, res) => {
 	console.log('hello');
 	const id = req.params.id;
