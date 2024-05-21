@@ -30,7 +30,7 @@ client
 .catch((err) => {
 	console.error('Error connecting to PostgreSQL database', err);
 });
-
+//setting search_path
 client.query('SET search_path to prova');
 
 const app = express();
@@ -42,20 +42,6 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 // parse application/json
 app.use(bodyParser.json())
-
-function mapDB(){
-	try {
-		let res =client.query("SELECT id FROM users");
-		res.forEach(element => {
-			let map = {
-				element : "negro",
-			}
-		});
-	} catch (error) {
-		console.error("Errore In dbmap");
-	}
-}
-
 
 //TODO trovare un modo per assegnare
 app.get("/api/convs/:id", async (req, res) => {
@@ -85,7 +71,7 @@ app.get("/api/convs/:id", async (req, res) => {
 		});
 	});
 });
-		
+
 app.get("/api/chat/:id", async (req, res) => {
 	console.log('hello');
 	const id = req.params.id;
@@ -122,7 +108,7 @@ app.get('/', function(req, res) {
 	res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 					
-async function userExists(username){
+async function getUser(username){
 
 	if (!username) {
 		return null;
@@ -149,7 +135,7 @@ app.post('/api/login', async (req, res) => {
 	const { username, password } = req.body;
 	try {
 
-		let user = await userExists(username);
+		let user = await getUser(username);
 		console.log(user);
 		if (!user) {
 			return res.status(401).send({
@@ -181,7 +167,7 @@ app.post('/api/signup', async (req, res) => {
 	
 	const { username, password } = req.body;
 
-	if(userExists(username)){
+	if(getUser(username)){
 		return res.status(401).send({status : 'User '+username+' already exists'})
 	}
 	
