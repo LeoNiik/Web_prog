@@ -38,7 +38,6 @@ function loginHandler() {
     .catch((error) => {
         console.error('Error:', error);
     });
-
 }
 
 function getRequestWithTimeout(url) {

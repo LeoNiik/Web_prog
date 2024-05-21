@@ -97,7 +97,6 @@ app.get("/api/chat/:id", async (req, res) => {
 	});
 });
 
-
 			
 app.get('/home', (req,res) => {
 	res.sendFile(path.join(__dirname, 'public/home.html'));
@@ -119,7 +118,7 @@ async function getUser(username){
 	const user = result.rows[0];
 
 	// Verifica che l'utente esista
-	return user	
+	return user;
 }
 	
 function comparePasswd(passwd, hash){
@@ -135,7 +134,7 @@ app.post('/api/login', async (req, res) => {
 	const { username, password } = req.body;
 	try {
 
-		let user = await 	(username);
+		let user = await getUser(username);
 		console.log(user);
 		if (!user) {
 			return res.status(401).send({
