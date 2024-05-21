@@ -86,7 +86,7 @@ function showConvs(){
         }
         else{
             //error in the backend
-            sidebar.innerHTML += "clicca per riprovare"
+            //sidebar.innerHTML += "clicca per riprovare"
         }
     })
     .catch(error => console.error('Error:', error));

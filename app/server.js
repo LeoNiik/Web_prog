@@ -57,6 +57,7 @@ app.get("/api/convs/:id", async (req, res) => {
 			})
 		}
 		//return the conversation as HTML
+		//TODO order the convs by lastUpdate
 		let dinamicContent = '';
 		result.rows.forEach(element => {
 			const {conv_id,conv_name, lastUpdate} = element;
@@ -141,7 +142,7 @@ app.post('/api/login', async (req, res) => {
 				status : "User "+username+" does not exist"
 			});
 		}
-		
+
 		const isPasswordValid = comparePasswd(password, user.password);
 		// Confronta la password inserita con quella salvata nel database
 		if (!isPasswordValid) {
@@ -165,8 +166,9 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/signup', async (req, res) => {
 	
 	const { username, password } = req.body;
-
-	if(getUser(username)){
+	let user = await getUser(username);
+	console.log(user);
+	if(user){
 		return res.status(401).send({status : 'User '+username+' already exists'})
 	}
 	
