@@ -5,7 +5,7 @@ const axios = require('axios');
 const { Client } = require('pg');
 var bodyParser = require('body-parser')
 const { createHash } = require('crypto');
-
+const utils = require('./utils');
 
 
 //const result = createHash('sha256').update("bacon").digest('hex');
@@ -45,6 +45,7 @@ app.use(bodyParser.json())
 
 //TODO trovare un modo per assegnare
 app.get("/api/convs/:id", async (req, res) => {
+
 	console.log('hello');
 	const id = req.params.id;
 	client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id WHERE user_id = ($1)'
@@ -60,11 +61,19 @@ app.get("/api/convs/:id", async (req, res) => {
 		//TODO order the convs by lastUpdate
 		let dinamicContent = '';
 		result.rows.forEach(element => {
-			const {conv_id,conv_name, lastUpdate} = element;
+			const {conversation_id,name, updated_at} = element;
+			let time = utils.extractTime(updated_at);
+			console.log(conversation_id,name,time);
+
 			dinamicContent += 
-			"<div class='sidebar-entry'>\
-				<label id="+conv_id+">"+conv_name +" "+lastUpdate+"</label>\
-			</div>";
+			'<div class="sidebar-entry" id='+conversation_id+'>\
+				<img src="(?)"></img>\
+				<label class="user">'+name+'</label>\
+				<div class="r-entry">\
+					<label class="notif">12</label>\
+					<label class="time">'+time+'</label>\
+				</div>\
+			</div>'
 		});
 		res.status(201).send({
 			status : "success",

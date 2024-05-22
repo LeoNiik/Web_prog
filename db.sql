@@ -39,8 +39,12 @@ CREATE TABLE Messages (
     conversation_id INT REFERENCES Conversations(id) ON DELETE CASCADE,
     sender_id INT REFERENCES Users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    status VARCHAR(50) DEFAULT 'sent',
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'sent'
 );
 
+INSERT INTO Conversations (name) VALUES ('New Conversation') RETURNING id;
+INSERT INTO Conversations (name) VALUES ('Francesco') RETURNING id;
 
+INSERT INTO Conversation_Participants (conversation_id, user_id) VALUES (1, 1);
+INSERT INTO Conversation_Participants (conversation_id, user_id) VALUES (2, 1);

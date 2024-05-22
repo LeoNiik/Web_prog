@@ -27,6 +27,8 @@ function loginHandler() {
     .then(data => {
         console.log('Success:', data);
         if(data.status == 'success'){
+            //salvo il session id nella cache, rimuovo se era gia presente
+            localStorage.removeItem('sessid');
             //login succesful
             localStorage.setItem('sessid', data.sessid);
             location.replace('/home')
@@ -77,7 +79,8 @@ function showConvs(){
         'Content-Type': 'application/json'
       },
     };
-    fetch('http:/localhost:8000/api/convs/'+id, options)
+    fetch('http://localhost:8000/api/convs/'+id, options)
+    .then(response => response.json())
     .then(data => {
         console.log(data);
         if(data.status === 'success'){
