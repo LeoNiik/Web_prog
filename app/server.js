@@ -66,12 +66,14 @@ app.get("/api/convs/:id", async (req, res) => {
 			console.log(conversation_id,name,time);
 
 			dinamicContent += 
-			'<div class="sidebar-entry" id='+conversation_id+'>\
-				<img src="(?)"></img>\
-				<label class="user">'+name+'</label>\
-				<div class="r-entry">\
-					<label class="notif">12</label>\
-					<label class="time">'+time+'</label>\
+			'<div class="sidebar-entry" id="'+conversation_id+'">\
+				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+				<div class="chat-info">\
+					<span class="chat-name">'+name+'</span>\
+				</div>\
+				<div class="notification-info">\
+					<span class="time">'+time+'</span>\
+					<span class="notifications">3</span>\
 				</div>\
 			</div>'
 		});
