@@ -1,5 +1,14 @@
 document.addEventListener("DOMContentLoaded", function() {
     showConvs();
+    document.addEventListener("keypress", function(event) {
+        // If the user presses the "Enter" key on the keyboard
+        if (event.key === "Enter") {
+          // Cancel the default action, if needed
+          event.preventDefault();
+          // Trigger the button element with a click
+          document.getElementById('login-btn').click();
+        }
+    });
 });
 function loginHandler() {
     console.log(new Date().valueOf())
@@ -9,7 +18,10 @@ function loginHandler() {
     btn.innerText = '. . .'
     btn.className = 'loading-btn'
     err = document.getElementById('err-text')
-  
+    //add user input check
+
+
+
     const data = {
         username,
         password
@@ -31,9 +43,12 @@ function loginHandler() {
             localStorage.removeItem('sessid');
             //login succesful
             localStorage.setItem('sessid', data.sessid);
-            location.replace('/home')
-        }else{
+            window.location.href = '/home';
+        }
+        else{
             //login failed
+            btn.innerText = 'Login';
+            btn.className = 'btn';
             err.innerText= data.status;
         }
     })
@@ -105,6 +120,8 @@ function signupHandler() {
     btn.innerText = '. . .';
     btn.className = 'loading-btn';
     let err = document.getElementById('err-text');
+    //add user input check
+
 
     if(password != conf_password){
         err.innerText = 'le password non coincidono'
@@ -130,9 +147,11 @@ function signupHandler() {
         console.log('Success:', data);
         if(data.status === 'success'){
             //sign up succesful
-            location.replace('/home')
+            window.location.href = '/login';
         }else{
             //sign up failed
+            btn.innerText = 'Sign up';
+            btn.className = 'btn';
             err.innerText= data.status;
         }
     })

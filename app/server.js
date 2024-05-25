@@ -46,7 +46,6 @@ app.use(bodyParser.json())
 //TODO trovare un modo per assegnare
 app.get("/api/convs/:id", async (req, res) => {
 
-	console.log('hello');
 	const id = req.params.id;
 	client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id WHERE user_id = ($1)'
 	,[id], (err, result) => {

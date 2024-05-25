@@ -17,7 +17,7 @@
                 <i class="fas fa-search"></i>
                 <input type="text" placeholder="Cerca...">
                 <i class="fas fa-ellipsis-h"></i>
-                <i class="fas fa-pen"></i>
+                <div id="new-chat"><i class="fas fa-pen" ></i></div>
             </div>
             <div class="sidebar-entry">
                 <img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">
@@ -28,6 +28,19 @@
                     <span class="time">14:30</span>
                     <span class="notifications">3</span>
                 </div>
+            </div>
+        </div>
+        <div id="popup-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Nuova Chat</h2>
+                <label for="chat-name">Nome della Chat:</label>
+                <input type="text" id="chat-name" name="chat-name" required>
+                
+                <label for="chat-participants">Partecipanti (separati da virgola):</label>
+                <input type="text" id="chat-participants" name="chat-participants" required>
+                
+                <button type="submit">Crea Chat</button>
             </div>
         </div>
         <div class="chat-wrapper">
