@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function() {
-    showConvs();
     document.addEventListener("keypress", function(event) {
         // If the user presses the "Enter" key on the keyboard
         if (event.key === "Enter") {
@@ -84,32 +83,7 @@ function showChat(){
     .catch(error => console.error('Error:', error));
     return;
 }
-function showConvs(){
-    let id = localStorage.getItem('sessid');
-    let sidebar = document.getElementById('sidebar');
 
-    const options = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-    };
-    fetch('http://localhost:8000/api/convs/'+id, options)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        if(data.status === 'success'){
-            //got conversations
-            sidebar.innerHTML += data.content;
-        }
-        else{
-            //error in the backend
-            //sidebar.innerHTML += "clicca per riprovare"
-        }
-    })
-    .catch(error => console.error('Error:', error));
-    return;
-}
 
 function signupHandler() {
 
