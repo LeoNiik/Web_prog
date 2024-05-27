@@ -63,42 +63,65 @@ function showConvs(){
 }
 
 function assignEventListeners() {
-    const messageInput = document.getElementById('new-message');
-    const messageOutput = document.getElementById('messages');
-    const modal = document.getElementById('popup-modal');
-    const newChatButton = document.getElementById('new-chat');
-    newChatButton.addEventListener('click', function () {
-        // Azione da eseguire quando si clicca sull'icona
-        console.log('Nuova chat cliccata!');
-        // Puoi anche aprire il modal per creare una nuova chat, per esempio
+    newChatListeners();
+    messageListeners();
+    moreOptionsListeners();
+
+    function newChatListeners(){
         const modal = document.getElementById('popup-modal');
-        modal.style.display = 'block';
-    });
+        const newChatButton = document.getElementById('new-chat');
+        newChatButton.addEventListener('click', function () {
+            // Azione da eseguire quando si clicca sull'icona
+            console.log('Nuova chat cliccata!');
+            // Puoi anche aprire il modal per creare una nuova chat, per esempio
+            const modal = document.getElementById('popup-modal');
+            modal.style.display = 'block';
+        });
         // Chiudi il modal quando si clicca sulla 'x'
-    const closeButton = document.querySelector('.close-button');
-    
-    closeButton.addEventListener('click', function () {
-        const modal = document.getElementById('popup-modal');
-        modal.style.display = 'none';
-    });
-
-    // Chiudi il modal quando si clicca fuori dalla finestra del modal
-    window.addEventListener('click', function (event) {
-        const modal = document.getElementById('popup-modal');
-        if (event.target == modal) {
+        const closeButton = document.querySelector('.close-button');
+        
+        closeButton.addEventListener('click', function () {
+            const modal = document.getElementById('popup-modal');
             modal.style.display = 'none';
-        }
-    });
+        });
     
+        // Chiudi il modal quando si clicca fuori dalla finestra del modal
+        window.addEventListener('click', function (event) {
+            const modal = document.getElementById('popup-modal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+    function messageListeners() {
+        const messageInput = document.getElementById('new-message');
+        const messageOutput = document.getElementById('messages');
+        //manda messaggio quando si preme enter
+        messageInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        
+        });
+    }
+    function moreOptionsListeners() {
+        const dropdownButton = document.getElementById('drop-btn');
+        const dropdown = document.getElementById('dropdown');
 
-    //manda messaggio quando si preme enter
-    messageInput.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-        }
-    
-    });
+        dropdownButton.addEventListener('click', (event) => {
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            event.stopPropagation(); // Prevent the event from bubbling up
+        });
+
+        window.addEventListener('click', function () {
+            dropdown.style.display = 'none';
+        });
+
+        dropdown.addEventListener('click', function(event) {
+            event.stopPropagation(); // Prevent the event from bubbling up
+        }); 
+    }
 }
 
 //TODO

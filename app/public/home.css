@@ -90,14 +90,14 @@ body {
     text-align: center;
 }
 
-.options {
+/* .options {
     display: flex;
     align-items: center;
     background-color: #f1f1f1;
     padding: 10px;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
+} */
 
 .options i {
     margin: 0 10px;
@@ -265,4 +265,49 @@ body {
     color: #000;
     text-decoration: none;
     cursor: pointer;
+}
+
+.options {
+    position: relative; /* Ensure .dropdown-content is positioned relative to .options */
+    display: flex;
+    align-items: center;
+    background-color: #f1f1f1;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: transparent;
+    min-width: 160px;
+    z-index: 1;
+    right: 0; /* Align right edge of dropdown with right edge of button */
+    border: none;
+    top: 40px; /* Position below the button */
+}
+
+/* Styling for each drop item */
+.drop-item {
+    margin: 10px 0;
+    background: transparent;
+}
+
+.drop-item a {
+    display: block;
+    padding: 10px 15px;
+    background-color: #ffffff;
+    border-radius: 20px; /* Makes the item look like a bubble */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Change color of drop-item on hover */
+.drop-item a:hover {
+    background-color: #25d366;
+    color: #fff;
 }
