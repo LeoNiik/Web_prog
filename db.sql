@@ -33,6 +33,17 @@ CREATE TABLE Conversation_Participants (
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+DROP TABLE IF EXISTS friends; 
+CREATE TABLE friends (
+    user_id INT,
+    friend_id INT,
+    status ENUM('pending', 'accepted', 'declined') DEFAULT 'pending',
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, friend_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (friend_id) REFERENCES users(user_id)
+);
+
 DROP TABLE IF EXISTS Messages;
 CREATE TABLE Messages (
     id SERIAL PRIMARY KEY,
