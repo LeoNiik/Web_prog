@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 ///poroceopces//////
 });
     
-
+var userid = 
 
 function isValid(str) {
     return !(str === '');
@@ -48,7 +48,7 @@ function showConvs(){
         'Content-Type': 'application/json'
         },
     };
-    fetch('http://localhost:8000/api/convs/'+id, options)
+    fetch('http://192.168.1.48:8000/api/convs/'+id, options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -66,10 +66,18 @@ function showConvs(){
     return;
 }
 
+//BISOGNA USARE SESSION PER l id della sessione e localStorage per il remember-me
+
+function logout() {
+    //tutto sminchiato 
+    sessionStorage.removeItem('uid');
+    window.location.href = '/login';
+}
+
 function searchConv() {
     const convName = document.getElementById('search-bar').value;
     let id = sessionStorage.getItem('sessid');
-    let sidebar = document.getElementById('sidebar');
+    let sidebar = document.getElementById('entries-wrapper');
 
     const options = {
         method: 'post',
@@ -78,7 +86,7 @@ function searchConv() {
         },
         convName
     };
-    fetch('http://localhost:8000/api/convs/'+id+'/search', options)
+    fetch('http://192.168.1.48:8000/api/convs/'+id+'/search', options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -88,17 +96,17 @@ function searchConv() {
             assignEventListeners();
         }
         else{
-            //error in the backend
-            //sidebar.innerHTML += "clicca per riprovare"
+
+            sidebar.innerHTML = data.content;
+            assignEventListeners();
         }
     })
     .catch(error => console.error('Error:', error));
     return;
-    
 }
 function showChat(){
-    let id = sessionStorage.getItem('sessid');
-    fetch('http:/localhost:8000/api/chat/'+id)
+    let id = sessionStorage.getItem('uid');
+    fetch('http:/192.168.1.48:8000/api/chat/'+id)
     .then(data => {
         console.log(data);
     })
@@ -112,6 +120,7 @@ function assignEventListeners() {
     moreOptionsListeners();
     newFriendsListeners();
     searchConvListeners();
+    logoutListeners();
 
     function newChatListeners(){
         const modal = document.getElementById('popup-newchat');
@@ -198,8 +207,15 @@ function assignEventListeners() {
     function searchConvListeners(){
         const searchButton = document.getElementById('search-conv');
         searchButton.addEventListener('click', () => {
+            console.log('click search');    
             searchConv();
-        })
+        });
+    }
+    function logoutListeners(){
+        const searchButton = document.getElementById('logout');
+        searchButton.addEventListener('click', () => {
+            logout();
+        });
     }
 }
 

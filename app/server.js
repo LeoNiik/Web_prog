@@ -40,51 +40,74 @@ app.use(express.static('src'));
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 
+app.use((req, res, next) => {
+	res.header("Access-Control-Allow-Origin", "*");
+	res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+	next();
+});
 // parse application/json
 app.use(bodyParser.json())
 
+async function generateUniqueID() {
+	let id;
+    let isUnique = false;
+
+    while (!isUnique) {
+        id = utils.generateRandomString(32);
+
+        const res = await client.query('SELECT id FROM users WHERE id = $1', [id]);
+        if (res.rows.length === 0) {
+            isUnique = true;
+        }
+	}
+	return id;
+}
+
 //TODO trovare un modo per assegnare
 app.get("/api/convs/:id", async (req, res) => {
-
-	const id = req.params.id;
-	client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id WHERE user_id = ($1)'
-	,[id], (err, result) => {
-		if (err) {
-			console.error('Error executing query', err);
-			res.status(401).send(			
-				{status : "error",
-				content : "error loading chats click to retry"
-			})
-		}
-		//return the conversation as HTML
-		//TODO order the convs by lastUpdate
-		let dinamicContent = '';
-		result.rows.forEach(element => {
-			const {conversation_id,name, updated_at} = element;
-			let time = utils.extractTime(updated_at);
-			console.log(conversation_id,name,time);
-
-			dinamicContent += 
-			'<div class="sidebar-entry" id="'+conversation_id+'">\
-				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
-				<div class="chat-info">\
-					<span class="chat-name">'+name+'</span>\
-				</div>\
-				<div class="notification-info">\
-					<span class="time">'+time+'</span>\
-					<span class="notifications">3</span>\
-				</div>\
-			</div>'
+	try {
+		const id = req.params.id;
+		client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id WHERE user_id = ($1)'
+		,[id], (err, result) => {
+			if (err) {
+				console.error('Error executing query', err);
+				res.status(401).send(			
+					{status : "error",
+					content : "error loading chats click to retry"
+				})
+	
+			}
+			//return the conversation as HTML
+			//TODO order the convs by lastUpdate
+			let dinamicContent = '';
+			result.rows.forEach(element => {
+				const {conversation_id,name, updated_at} = element;
+				let time = utils.extractTime(updated_at);
+				console.log(conversation_id,name,time);
+	
+				dinamicContent += 
+				'<div class="sidebar-entry" id="'+conversation_id+'">\
+					<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+					<div class="chat-info">\
+						<span class="chat-name">'+name+'</span>\
+					</div>\
+					<div class="notification-info">\
+						<span class="time">'+time+'</span>\
+						<span class="notifications">3</span>\
+					</div>\
+				</div>'
+			});
+			res.status(201).send({
+				status : "success",
+				content : dinamicContent
+			});
 		});
-		res.status(201).send({
-			status : "success",
-			content : dinamicContent
-		});
-	});
+	} catch (error) {
+		
+	}
 });
 
 app.get("/api/chat/:id", async (req, res) => {
-	console.log('hello');
 	const id = req.params.id;
 	client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id WHERE user_id = ($1)'
 	,[id], (err, result) => {
@@ -142,7 +165,7 @@ app.post('/api/login', async (req, res) => {
 	
 	// Handle login logic here
 	
-	const { username, password } = req.body;
+	const { username, password , remember_me} = req.body;
 	try {
 
 		let user = await getUser(username);
@@ -160,16 +183,22 @@ app.post('/api/login', async (req, res) => {
 		}
 		
 		// Se le credenziali sono valide, autentica l'utente
-		const id = utils.generateRandomString(32);
+		let sessionid = '';
+		let userid = user.rows[0].id;
+		if (remember_me) {
+			id = utils.generateRandomString(32);
+			await client.query('UPDATE Users SET session_id = $1 WHERE username = $2', [sessionid, username]);
+			//aggiorna il sessid
+		}
 		res.status(200).send({
 			status : "success",
-			sessid : id
+			id : userid,
+			sessid : sessionid
 		});
 		//genera il sessid
 		//aggiorna il sessid
-		await client.query('UPDATE Users SET session_id = $1 WHERE username = $2', [id, username]);
 		//console loggo
-		console.log('Utente autenticato:', username);
+		console.log('Utente autenticato:', remember_me);
 		console.log('Sessid:', id);
 		
 		
@@ -179,44 +208,53 @@ app.post('/api/login', async (req, res) => {
 	}
 });
 
-app.post('/api/auth_by_sessid', async (req,res) => {
+app.post('/api/auth/sessid', async (req,res) => {
 	const {sessid} = req.body;
-	const user = await client.query('SELECT * FROM Users WHERE session_id = $1', [sessid]);
-	if(user.rows.length === 0){
-		res.status(401).send({status : "User not found"});
+	try {
+		const user = await client.query('SELECT username FROM Users WHERE session_id = $1', [sessid]);
+		if(user.rows.length === 0){
+			res.status(401).send({status : "User not found"});
+		}
+		res.status(200).send({status : "success", username : user.rows[0].username});
+		res.sendFile(path.join(__dirname, 'public/home.html'))
+	} catch (error) {
+		console.log('Error during auth query')
 	}
-	res.status(200).send({status : "success", username : user.rows[0].username});
-	res.sendFile(path.join(__dirname, 'public/home.html'))
 
 });
 
 app.post('/api/convs/:id/search', async (req,res) => {
 	const id = req.params.id;
 	const convName = req.body
-	client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id WHERE user_id = ($1) AND name LIKE ($2)'
-	,[id, convName], (err, result) => {
-		if (err) {
-			console.error('Error executing query', err);
-			res.status(401).send(			
-				{status : "error",
-				content : "error loading chats click to retry"
-			});
-		}
-		if(result.rows[0]==='undefined'){
-			res.status(401).send(			
-			{status : "error",
-			content : "error loading chats click to retry"
-			});
+	console.log(convName);
+	try {
 
-		}		
-		//return the conversation as HTML
-		//TODO order the convs by lastUpdate
-		let dinamicContent = '';
-		result.rows.forEach(element => {
+		//GESTIRE USERID COME IL SESSIONID , stringa alfanumerica 32 char univoca
+
+		client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id \
+		JOIN users ON session_idWHERE session_id = ($1) AND name LIKE ($2)'
+		,[id, convName], (err, result) => {
+			if (err) {
+				console.error('Error executing query', err);
+				res.status(401).send(			
+					{status : "error",
+					content : 
+					'<div class="sidebar-entry>"\
+						<p>No chat containing '+convName+' </p>\
+					</div>'
+					
+				});
+				return;
+			}
+
+			//return the conversation as HTML
+			//TODO order the convs by lastUpdate
+			let dinamicContent = '';
+			result.rows.forEach(element => {
 			const {conversation_id,name, updated_at} = element;
 			let time = utils.extractTime(updated_at);
 			console.log(conversation_id,name,time);
-
+			
 			dinamicContent += 
 			'<div class="sidebar-entry" id="'+conversation_id+'">\
 				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
@@ -228,12 +266,15 @@ app.post('/api/convs/:id/search', async (req,res) => {
 					<span class="notifications">3</span>\
 				</div>\
 			</div>'
+			});
+			res.status(201).send({
+				status : "success",
+				content : dinamicContent
+			});			
 		});
-		res.status(201).send({
-			status : "success",
-			content : dinamicContent
-		});
-	});
+	} catch (error) {
+		console.log('Error in query search', error);
+	}
 });
 
 app.post('/api/forgot', async (req,res) => {
@@ -259,20 +300,23 @@ app.post('/api/signup', async (req, res) => {
 	const { username, password } = req.body;
 	let user = await getUser(username);
 	console.log(user);
+
+	let id = generateUniqueID();
 	if(user){
 		return res.status(401).send({status : 'User '+username+' already exists'})
 	}
 
 	try {
-		// Hash della password
-	  const hashedPassword = createHash('sha256').update(password).digest('hex');
-	  console.log(password,hashedPassword)
-	  // Inserisci il nuovo utente nel database
-	  await client.query(
-		  'INSERT INTO Users (username, password) VALUES ($1,$2)',
-		  [username,hashedPassword]
-		);
 		
+		// Hash della password
+		const hashedPassword = createHash('sha256').update(password).digest('hex');
+		console.log(password,hashedPassword)
+		// Inserisci il nuovo utente nel database
+		await client.query(
+			'INSERT INTO Users (username, password, id) VALUES ($1,$2)',
+			[username,hashedPassword,id]
+		);
+			
 		res.status(200).send({status : "success"});
 		
 	} catch (error) {
@@ -301,10 +345,12 @@ app.listen(PORT, HOST);
 
 
 // CREATE TABLE Users (
-//     id SERIAL PRIMARY KEY,
+//     id VARCHAR(32) PRIMARY KEY,
 //     username VARCHAR(50) NOT NULL UNIQUE,
 //     password VARCHAR(255) NOT NULL,
-//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     session_id VARCHAR(32)
+
 // );
 
 // DROP TABLE IF EXISTS Conversations;

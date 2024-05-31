@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function() {
           },
           body: JSON.stringify(data)
         };
-        fetch('http://localhost:8000/api/auth_by_sessid', options)
+        fetch('http://192.168.1.48:8000/api/auth/sessid', options)
         .then(response => response.json())
         .then(data => {
             console.log('Success:', data);
@@ -51,7 +51,7 @@ function forgotHandler() {
       },
       body: JSON.stringify(data)
     };
-    fetch('http://localhost:8000/api/forgot', options)
+    fetch('http://192.168.1.48:8000/api/forgot', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
@@ -72,6 +72,7 @@ function loginHandler() {
     console.log(new Date().valueOf())
     username = document.getElementById('username').value
     password = document.getElementById('password').value
+    remember_me = document.getElementById('remember_me').checked
     btn = document.getElementById('login-btn')
     btn.innerText = '. . .'
     btn.className = 'loading-btn'
@@ -80,7 +81,8 @@ function loginHandler() {
 
     const data = {
         username,
-        password
+        password,
+        remember_me
     };
     const options = {
       method: 'POST',
@@ -90,16 +92,16 @@ function loginHandler() {
       body: JSON.stringify(data)
     };
     console.log(options.body)
-    fetch('http://localhost:8000/api/login', options)
+    fetch('http://192.168.1.48:8000/api/login', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
         if(data.status == 'success'){
             //salvo il session id nella cache, rimuovo se era gia presente
-            
             sessionStorage.removeItem('sessid');
             //login succesful
-            sessionStorage.setItem('sessid', data.sessid);
+
+            if(remember_me) sessionStorage.setItem('sessid', data.sessid);
             window.location.href = '/home';
         }
         else{
@@ -165,7 +167,7 @@ function signupHandler() {
       body: JSON.stringify(data)
     };
 
-    fetch('http://localhost:8000/api/signup', options)
+    fetch('http://192.168.1.48:8000/api/signup', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
