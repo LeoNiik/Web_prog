@@ -66,11 +66,52 @@ function showConvs(){
     return;
 }
 
+function searchConv() {
+    const convName = document.getElementById('search-bar').value;
+    let id = sessionStorage.getItem('sessid');
+    let sidebar = document.getElementById('sidebar');
+
+    const options = {
+        method: 'post',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        convName
+    };
+    fetch('http://localhost:8000/api/convs/'+id+'/search', options)
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        if(data.status === 'success'){
+            //got conversations
+            sidebar.innerHTML += data.content;
+            assignEventListeners();
+        }
+        else{
+            //error in the backend
+            //sidebar.innerHTML += "clicca per riprovare"
+        }
+    })
+    .catch(error => console.error('Error:', error));
+    return;
+    
+}
+function showChat(){
+    let id = sessionStorage.getItem('sessid');
+    fetch('http:/localhost:8000/api/chat/'+id)
+    .then(data => {
+        console.log(data);
+    })
+    .catch(error => console.error('Error:', error));
+    return;
+}
+
 function assignEventListeners() {
     newChatListeners();
     messageListeners();
     moreOptionsListeners();
     newFriendsListeners();
+    searchConvListeners();
 
     function newChatListeners(){
         const modal = document.getElementById('popup-newchat');
@@ -128,7 +169,6 @@ function assignEventListeners() {
             event.stopPropagation(); // Prevent the event from bubbling up
         }); 
     }
-
     function newFriendsListeners() {
         const modal = document.getElementById('popup-newfriend');
         const newFriendButton = document.getElementById('new-friend');
@@ -155,6 +195,12 @@ function assignEventListeners() {
             }
         });
     }
+    function searchConvListeners(){
+        const searchButton = document.getElementById('search-conv');
+        searchButton.addEventListener('click', () => {
+            searchConv();
+        })
+    }
 }
 
 //TODO
@@ -162,7 +208,7 @@ function assignEventListeners() {
     //add a friendship system (update db)
     //
     //how to manage user session
-    //
+    //  
     //implement newChat(), newFriend(), retrieveChat(), 
     //
     // last but not least implement all real time message logic

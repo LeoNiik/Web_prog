@@ -1,4 +1,29 @@
 document.addEventListener("DOMContentLoaded", function() {
+
+    //prendo il sessid
+    const sessid = sessionStorage.getItem('sessid');
+    //se c'è un sessid, reindirizzo alla home
+    if(sessid){
+        const data = {
+            sessid
+        };
+        const options = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        };
+        fetch('http://localhost:8000/api/auth_by_sessid', options)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            if(data.status == 'success'){
+                //login succesful
+                window.location.href = '/home';
+            }
+        });
+    }
     document.addEventListener("keypress", function(event) {
         // If the user presses the "Enter" key on the keyboard
         if (event.key === "Enter") {
@@ -8,7 +33,41 @@ document.addEventListener("DOMContentLoaded", function() {
           document.getElementById('login-btn').click();
         }
     });
+
 });
+
+function forgotHandler() {
+    username = document.getElementById('username').value
+    password = document.getElementById('password').value
+
+    const data = {
+        username,
+        password
+    };
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    };
+    fetch('http://localhost:8000/api/forgot', options)
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+        if(data.status == 'success'){
+            //forgot succesful
+            window.location.href = '/login';
+        }
+        else{
+            //forgot failed
+            err = document.getElementById('err-text')
+            err.innerText= data.status;
+        }
+    })
+}
+
+
 function loginHandler() {
     console.log(new Date().valueOf())
     username = document.getElementById('username').value
@@ -18,8 +77,6 @@ function loginHandler() {
     btn.className = 'loading-btn'
     err = document.getElementById('err-text')
     //add user input check
-
-
 
     const data = {
         username,
@@ -39,9 +96,10 @@ function loginHandler() {
         console.log('Success:', data);
         if(data.status == 'success'){
             //salvo il session id nella cache, rimuovo se era gia presente
-            localStorage.removeItem('sessid');
+            
+            sessionStorage.removeItem('sessid');
             //login succesful
-            localStorage.setItem('sessid', data.sessid);
+            sessionStorage.setItem('sessid', data.sessid);
             window.location.href = '/home';
         }
         else{
@@ -74,15 +132,7 @@ function getRequestWithTimeout(url) {
 }
 // Usage example
 
-function showChat(){
-    let id = localStorage.getItem('sessid');
-    fetch('http:/localhost:8000/api/chat/'+id)
-    .then(data => {
-        console.log(data);
-    })
-    .catch(error => console.error('Error:', error));
-    return;
-}
+
 
 
 function signupHandler() {

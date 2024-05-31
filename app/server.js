@@ -160,11 +160,18 @@ app.post('/api/login', async (req, res) => {
 		}
 		
 		// Se le credenziali sono valide, autentica l'utente
-		let id = user.id;
+		const id = utils.generateRandomString(32);
 		res.status(200).send({
 			status : "success",
 			sessid : id
 		});
+		//genera il sessid
+		//aggiorna il sessid
+		await client.query('UPDATE Users SET session_id = $1 WHERE username = $2', [id, username]);
+		//console loggo
+		console.log('Utente autenticato:', username);
+		console.log('Sessid:', id);
+		
 		
 	} catch (error) {
 		console.error('Errore durante il login:', error);
@@ -172,6 +179,80 @@ app.post('/api/login', async (req, res) => {
 	}
 });
 
+app.post('/api/auth_by_sessid', async (req,res) => {
+	const {sessid} = req.body;
+	const user = await client.query('SELECT * FROM Users WHERE session_id = $1', [sessid]);
+	if(user.rows.length === 0){
+		res.status(401).send({status : "User not found"});
+	}
+	res.status(200).send({status : "success", username : user.rows[0].username});
+	res.sendFile(path.join(__dirname, 'public/home.html'))
+
+});
+
+app.post('/api/convs/:id/search', async (req,res) => {
+	const id = req.params.id;
+	const convName = req.body
+	client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id WHERE user_id = ($1) AND name LIKE ($2)'
+	,[id, convName], (err, result) => {
+		if (err) {
+			console.error('Error executing query', err);
+			res.status(401).send(			
+				{status : "error",
+				content : "error loading chats click to retry"
+			});
+		}
+		if(result.rows[0]==='undefined'){
+			res.status(401).send(			
+			{status : "error",
+			content : "error loading chats click to retry"
+			});
+
+		}		
+		//return the conversation as HTML
+		//TODO order the convs by lastUpdate
+		let dinamicContent = '';
+		result.rows.forEach(element => {
+			const {conversation_id,name, updated_at} = element;
+			let time = utils.extractTime(updated_at);
+			console.log(conversation_id,name,time);
+
+			dinamicContent += 
+			'<div class="sidebar-entry" id="'+conversation_id+'">\
+				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+				<div class="chat-info">\
+					<span class="chat-name">'+name+'</span>\
+				</div>\
+				<div class="notification-info">\
+					<span class="time">'+time+'</span>\
+					<span class="notifications">3</span>\
+				</div>\
+			</div>'
+		});
+		res.status(201).send({
+			status : "success",
+			content : dinamicContent
+		});
+	});
+});
+
+app.post('/api/forgot', async (req,res) => {
+	const { username, password} = req.body;
+	let user = await getUser(username);
+	if (!user) {
+		return res.status(401).send({
+			status : "User "+username+" does not exist"
+		});
+	}
+	try {
+		const hashedPassword = createHash('sha256').update(password).digest('hex');
+		await client.query('UPDATE Users SET password = $1 WHERE username = $2', [hashedPassword, username]);
+		res.status(200).send({status : "success"});
+	} catch (error) {
+		console.error('Errore durante il reset password:', error);
+		res.status(500).send({status : "internal error"});
+	}
+});
 // Placeholder for POST /signup route
 app.post('/api/signup', async (req, res) => {
 	
@@ -181,7 +262,7 @@ app.post('/api/signup', async (req, res) => {
 	if(user){
 		return res.status(401).send({status : 'User '+username+' already exists'})
 	}
-	
+
 	try {
 		// Hash della password
 	  const hashedPassword = createHash('sha256').update(password).digest('hex');
@@ -202,6 +283,10 @@ app.post('/api/signup', async (req, res) => {
 
 app.get('/login', (req,res) => {
 	res.sendFile(path.join(__dirname, 'public/login.html'))
+});
+
+app.get('/forgot', (req,res) => {
+	res.sendFile(path.join(__dirname, 'public/forgot.html'))
 });
 
 app.get('/signup', (req,res) => {

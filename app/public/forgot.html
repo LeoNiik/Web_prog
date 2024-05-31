@@ -1,0 +1,72 @@
+<!-- a page to handle forgot password -->
+
+<!DOCTYPE html>
+<html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Forgot Password!</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="prova.js"></script>
+        <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel="stylesheet">
+    
+    </head>
+
+<body class="forgot">
+    <div class="wrapper">
+        <h1>Forgot Password</h1>
+        <div class="input-box">
+            <input type="text" placeholder="Insert username" id="username"></input>
+            <i class='bx bxs-user'></i>
+        </div>
+        <div class="input-box">
+            <input type="password" placeholder="Insert new password" id="password"></input>
+            <i class='bx bxs-lock-alt'></i>
+        </div>
+
+        <button class="btn" id="login-btn" onclick="forgotHandler()">Submit</button>
+        <div class="err-text">
+            <label id="err-text"></label>
+        </div>
+
+    </div>
+
+
+</html>
+
+<!-- <body>
+    <div class="input-box">
+        <input type="text" placeholder="your username" id="username"></input>
+        <i class='bx bxs-lock-alt'></i>
+        <input type="password" placeholder="new password" id="password"></input>
+        <button onclick="forgotHandler()">Submit</button>
+    </div>
+</body> -->
+
+<!-- <div class="wrapper">
+    <h1>Login</h1>
+    <div class="input-box">
+        <input type="text" placeholder="Insert username" id="username"></input>
+        <i class='bx bxs-user'></i>
+    </div>
+
+    <div class="input-box">
+        <input type="password" placeholder="Insert password" id="password"></input>
+        <i class='bx bxs-lock-alt'></i>
+    </div>
+
+    <div class="remember-forgot">
+        <label><input type="checkbox">Remember me</input></label>
+        <a href="/forgot">Forgot password?</a>
+    </div>
+
+    <button class="btn" id="login-btn" onclick="loginHandler()">Login</button>
+    
+    <div class="err-text">
+        <label id="err-text"></label>
+    </div>
+    
+    <div class="register-link">
+        <p>No account? <a href="/signup">sign up</a></p>
+    </div>        
+</div> -->
