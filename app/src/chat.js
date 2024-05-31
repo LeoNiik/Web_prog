@@ -7,14 +7,17 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
 
 
-function isValid(txt) {
-    return str.trim().length === 0;
+function isValid(str) {
+    return !(str === '');
 }
 function sendMessage() {
+
+    const messageInput = document.getElementById('new-message');
+    const messageOutput = document.getElementById('messages');
+    const message = messageInput.value.trim();
+    console.log("Messaggio da inviare: " + message);
     
     if(!isValid(message)) return;
-
-    const message = messageInput.value.trim();
     let time = new Date();
     let shownTime = time.getHours()+':'+time.getMinutes();
     registerMessage();
@@ -25,9 +28,10 @@ function sendMessage() {
     }
     messageOutput.innerHTML += 
     '<div class="message">\
-    <p class="message-text">'+message+'</p>\
-    <div class="message-info">\
-        <span class="message-time">'+shownTime+'</span>\
+        <p class="message-text">'+message+'</p>\
+        <div class="message-info">\
+            <span class="message-time">'+shownTime+'</span>\
+        </div>\
     </div>';
 }
 
@@ -66,28 +70,30 @@ function assignEventListeners() {
     newChatListeners();
     messageListeners();
     moreOptionsListeners();
+    newFriendsListeners();
 
     function newChatListeners(){
-        const modal = document.getElementById('popup-modal');
+        const modal = document.getElementById('popup-newchat');
         const newChatButton = document.getElementById('new-chat');
+
         newChatButton.addEventListener('click', function () {
             // Azione da eseguire quando si clicca sull'icona
-            console.log('Nuova chat cliccata!');
+            console.log('Nuova chat cliccata!');    
             // Puoi anche aprire il modal per creare una nuova chat, per esempio
-            const modal = document.getElementById('popup-modal');
+            const modal = document.getElementById('popup-newchat');
             modal.style.display = 'block';
         });
         // Chiudi il modal quando si clicca sulla 'x'
-        const closeButton = document.querySelector('.close-button');
+        const closeButton = modal.querySelector('.close-button');
         
         closeButton.addEventListener('click', function () {
-            const modal = document.getElementById('popup-modal');
+            const modal = document.getElementById('popup-newchat');
             modal.style.display = 'none';
         });
     
         // Chiudi il modal quando si clicca fuori dalla finestra del modal
         window.addEventListener('click', function (event) {
-            const modal = document.getElementById('popup-modal');
+            const modal = document.getElementById('popup-newchat');
             if (event.target == modal) {
                 modal.style.display = 'none';
             }
@@ -122,6 +128,33 @@ function assignEventListeners() {
             event.stopPropagation(); // Prevent the event from bubbling up
         }); 
     }
+
+    function newFriendsListeners() {
+        const modal = document.getElementById('popup-newfriend');
+        const newFriendButton = document.getElementById('new-friend');
+        newFriendButton.addEventListener('click', function () {
+            // Azione da eseguire quando si clicca sull'icona
+            console.log('Nuova chat cliccata!');
+            // Puoi anche aprire il modal per creare una nuova chat, per esempio
+            const modal = document.getElementById('popup-newfriend');
+            modal.style.display = 'block';
+        });
+        // Chiudi il modal quando si clicca sulla 'x'
+        const closeButton = modal.querySelector('.close-button');
+        
+        closeButton.addEventListener('click', function () {
+            const modal = document.getElementById('popup-newfriend');
+            modal.style.display = 'none';
+        });
+    
+        // Chiudi il modal quando si clicca fuori dalla finestra del modal
+        window.addEventListener('click', function (event) {
+            const modal = document.getElementById('popup-newfriend');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
 }
 
 //TODO
@@ -130,10 +163,24 @@ function assignEventListeners() {
     //
     //how to manage user session
     //
-    //implement newChat(), newFriend(), retrieveChat()
+    //implement newChat(), newFriend(), retrieveChat(), 
     //
     // last but not least implement all real time message logic
     //
     //
+//TODO home.html
 
+    // far funzionare tutti i bottoni e icone
+    //
+    // rendere il sito responsive
+    //
+    // dividere i messaggi tra sx/dx ricevente/mittente, fixare in generale i messaggi
+    // es. in base alla lunghezza
+    //
+    //
+//TODO login.html
+
+    //implementare forgot-password e remember me
+    //
+    //
 

@@ -292,9 +292,10 @@ body {
 .drop-item {
     margin: 10px 0;
     background: transparent;
+    cursor: pointer;
 }
 
-.drop-item a {
+.drop-item p {
     display: block;
     padding: 10px 15px;
     background-color: #ffffff;
@@ -307,7 +308,7 @@ body {
 }
 
 /* Change color of drop-item on hover */
-.drop-item a:hover {
+.drop-item p:hover {
     background-color: #25d366;
     color: #fff;
 }

@@ -216,38 +216,49 @@ app.listen(PORT, HOST);
 
 
 // CREATE TABLE Users (
-//     id int,
+//     id SERIAL PRIMARY KEY,
 //     username VARCHAR(50) NOT NULL UNIQUE,
 //     password VARCHAR(255) NOT NULL,
-//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//     PRIMARY KEY (id)
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 // );
 
+// DROP TABLE IF EXISTS Conversations;
 // CREATE TABLE Conversations (
-//     id int,
+//     id SERIAL PRIMARY KEY,
 //     name VARCHAR(255),
 //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//     PRIMARY KEY (id)
+//     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 // );
 
+// DROP TABLE IF EXISTS Conversation_Participants; 
 // CREATE TABLE Conversation_Participants (
-//     id int,
+//     id SERIAL PRIMARY KEY,
 //     conversation_id INT REFERENCES Conversations(id) ON DELETE CASCADE,
 //     user_id INT REFERENCES Users(id) ON DELETE CASCADE,
-//     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//     PRIMARY KEY (id, conversation_id, user_id)
+//     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 // );
 
+// DROP TABLE IF EXISTS friends; 
+// CREATE TABLE friends (
+//     user_id INT,
+//     friend_id INT,
+//     status ENUM('pending', 'accepted', 'declined') DEFAULT 'pending',
+//     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     PRIMARY KEY (user_id, friend_id),
+//     FOREIGN KEY (user_id) REFERENCES users(user_id),
+//     FOREIGN KEY (friend_id) REFERENCES users(user_id)
+// );
+
+// DROP TABLE IF EXISTS Messages;
 // CREATE TABLE Messages (
-//     id int,
+//     id SERIAL PRIMARY KEY,
 //     conversation_id INT REFERENCES Conversations(id) ON DELETE CASCADE,
 //     sender_id INT REFERENCES Users(id) ON DELETE CASCADE,
 //     content TEXT NOT NULL,
 //     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//     status VARCHAR(50) DEFAULT 'sent',
-//     PRIMARY KEY (id,conversation_id,sender_id)
+//     status VARCHAR(50) DEFAULT 'sent'
 // );
+
 
 //seleziono solo le conversazioni di cui faccio parte
 

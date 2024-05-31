@@ -18,8 +18,8 @@
                 <input type="text" placeholder="Cerca...">
                 <div id="drop-btn"><i class="fas fa-ellipsis-h"></i></div>
                 <div class="dropdown-content" id="dropdown">
-                    <div class="drop-item"><a href="#">Link 1</a></div>
-                    <div class="drop-item"><a href="#">Link 1</a></div>
+                    <div class="drop-item" id="new-friend"><p>Add new friend</p></div>
+                    <div class="drop-item"><a href="#">bo</a></div>
                     <div class="drop-item"><a href="#">Link 1</a></div>
                 </div>
                 <div id="new-chat"><i class="fas fa-pen" ></i></div>
@@ -35,7 +35,7 @@
                 </div>
             </div>
         </div>
-        <div id="popup-modal" class="modal">
+        <div id="popup-newchat" class="modal">
             <div class="modal-content">
                 <span class="close-button">&times;</span>
                 <h2>Nuova Chat</h2>
@@ -47,6 +47,17 @@
                 
                 <button type="submit">Crea Chat</button>
             </div>
+            
+        </div>
+        <div id="popup-newfriend" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Add a new friend</h2>
+                <label for="chat-name">Insert username:</label>
+                <input type="text" id="chat-name" name="chat-name" required>                
+                <button type="submit">Crea Chat</button>
+            </div>
+            
         </div>
         <div class="chat-wrapper">
             <div class="header">
@@ -61,7 +72,12 @@
                 <i class="fas fa-ellipsis-v"></i>
             </div>
             <div class="messages" id="messages">
-                <!-- Qui verranno inseriti i messaggi della chat -->
+                <div id="receiver">
+                    <!-- Qui verranno inseriti i messaggi della chat -->
+                </div>
+                <div id="sender">
+                    <!-- Qui verranno inseriti i messaggi della chat -->
+                </div>
             </div>
             <div class="footer">
                 <i class="fas fa-smile"></i>
