@@ -69,7 +69,7 @@ function forgotHandler() {
 
 
 function loginHandler() {
-    console.log(new Date().valueOf())
+
     username = document.getElementById('username').value
     password = document.getElementById('password').value
     remember_me = document.getElementById('remember_me').checked
@@ -92,7 +92,7 @@ function loginHandler() {
       body: JSON.stringify(data)
     };
     console.log(options.body)
-    fetch('http://192.168.1.48:8000/api/login', options)
+    fetch('http://localhost:8000/api/login', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);

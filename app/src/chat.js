@@ -3,9 +3,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     assignEventListeners();
     // Apri il popup modale
 ///poroceopces//////
-});
-    
-var userid = 
+}); 
 
 function isValid(str) {
     return !(str === '');
@@ -70,7 +68,7 @@ function showConvs(){
 
 function logout() {
     //tutto sminchiato 
-    sessionStorage.removeItem('uid');
+    sessionStorage.removeItem('sessid');
     window.location.href = '/login';
 }
 
