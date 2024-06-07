@@ -33,7 +33,7 @@ function sendMessage() {
 function registerMessage(){
     let id = sessionStorage.getItem('sessid');
     let message = document.getElementById('new-message').value;
-    let receiver = document.getElementById('contact-name').value;
+    let receiver = document.querySelector('.contact-name');
     let time = new Date();
     let shownTime = time.getHours()+':'+time.getMinutes();
     const options = {

@@ -85,7 +85,7 @@ function loginHandler() {
 
     const data = {
         username,
-        password
+        password,
     };
     const options = {
       method: 'POST',
@@ -94,7 +94,7 @@ function loginHandler() {
       },
       body: JSON.stringify(data)
     };
-    console.log(options.body)
+    //console.log(options.body)
     fetch('http://localhost:8000/api/login', options)
     .then(response => response.json())
     .then(data => {

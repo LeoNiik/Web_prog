@@ -67,41 +67,43 @@ async function generateUniqueID() {
 app.get("/api/convs/:id", async (req, res) => {
 	try {
 		const id = req.params.id;
-		client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id WHERE user_id = ($1)'
-		,[id], (err, result) => {
-			if (err) {
-				console.error('Error executing query', err);
-				res.status(401).send(			
-					{status : "error",
-					content : "error loading chats click to retry"
-				})
-	
-			}
-			//return the conversation as HTML
-			//TODO order the convs by lastUpdate
-			let dinamicContent = '';
-			result.rows.forEach(element => {
-				const {conversation_id,name, updated_at} = element;
-				let time = utils.extractTime(updated_at);
-				console.log(conversation_id,name,time);
-	
-				dinamicContent += 
-				'<div class="sidebar-entry" id="'+conversation_id+'">\
-					<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
-					<div class="chat-info">\
-						<span class="chat-name">'+name+'</span>\
-					</div>\
-					<div class="notification-info">\
-						<span class="time">'+time+'</span>\
-						<span class="notifications">3</span>\
-					</div>\
-				</div>'
+
+		const result = await client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON session_id WHERE session_id = $1', [id]);
+
+		if (result.rows.length === 0) {
+			res.status(401).send({
+				status : "No conversations found"
 			});
-			res.status(201).send({
-				status : "success",
-				content : dinamicContent
-			});
+			return;
+		}
+
+		//return the conversation as HTML
+		//TODO order the convs by lastUpdate
+		let dinamicContent = '';
+
+		
+		result.rows.forEach(element => {
+			const {conversation_id,name, updated_at} = element;
+			let time = utils.extractTime(updated_at);
+			console.log(conversation_id,name,time);
+
+			dinamicContent += 
+			'<div class="sidebar-entry" id="'+conversation_id+'">\
+				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+				<div class="chat-info">\
+					<span class="chat-name">'+name+'</span>\
+				</div>\
+				<div class="notification-info">\
+					<span class="time">'+time+'</span>\
+					<span class="notifications">3</span>\
+				</div>\
+			</div>'
 		});
+		res.status(201).send({
+			status : "success",
+			content : dinamicContent
+		});
+
 	} catch (error) {
 		
 	}
@@ -170,9 +172,6 @@ app.post('/api/chat/', async (req,res) => {
 });
 
 			
-app.get('/home', (req,res) => {
-	res.sendFile(path.join(__dirname, 'public/home.html'));
-});
 
 //send index.html as response for GET /
 app.get('/', function(req, res) {
@@ -224,17 +223,13 @@ app.post('/api/login', async (req, res) => {
 		let sessionid = utils.generateRandomString(32);
 		await client.query('UPDATE Users SET session_id = $1 WHERE username = $2', [sessionid, username]);
 
-
-		res.status(200).send({
-			status : "success",
-			sessid : sessionid
-		});
 		//genera il sessid
 		//aggiorna il sessid
 		//console loggo
-		console.log('Utente autenticato:', remember_me);
+		console.log('Utente autenticato:');
 		console.log('Sessid:', sessionid);
-		
+		return res.status(200).send({status : "success", sessid : sessionid});
+
 		
 	} catch (error) {
 		console.error('Errore durante il login:', error);
@@ -257,16 +252,16 @@ app.post('/api/message', async (req,res) => {
 
 		//trova la conv_id a cui partecipano entrambi
 		
-		conv_id = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1 INTERSECT SELECT conversation_id FROM Conversation_Participants WHERE user_id = $2', [sender_id, receiver_id.rows[0].id]);
+		const conv_id = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1 INTERSECT SELECT conversation_id FROM Conversation_Participants WHERE user_id = $2', [sender_id, receiver_id.rows[0].id]);
 		
 		if(conv_id.rows.length === 0){
 			res.status(401).send({status : "No conversation found"});
 		}
 		//inserisci il messaggio
-		await client.query('INSERT INTO Messages (conversation_id, sender_id, content, timestamp) VALUES ($1, $2, $3, $4)', [conv_id.rows[0].conversation_id, sender_id, message, time]);
-		if (err) {
-			console.error('Error executing query', err);
-			res.status(401).send({status : "Error during message query"});
+		let err = await client.query('INSERT INTO Messages (conversation_id, sender_id, content, timestamp) VALUES ($1, $2, $3, $4)', [conv_id.rows[0].conversation_id, sender_id, message, time]);
+		if (err.rows.length === 0){
+			res.status(401).send({status : "No Messages found"});
+
 		}
 		res.status(200).send({status : "success"});
 	} catch (error) {
@@ -282,7 +277,7 @@ app.post('/api/auth/sessid', async (req,res) => {
 			res.status(401).send({status : "User not found"});
 		}
 		res.status(200).send({status : "success", username : user.rows[0].username});
-		res.sendFile(path.join(__dirname, 'public/home.html'))
+		//res.sendFile(path.join(__dirname, 'public/home.html'));
 	} catch (error) {
 		console.log('Error during auth query')
 	}
@@ -402,6 +397,19 @@ app.get('/signup', (req,res) => {
 
 app.get('/easter_egg', (req,res) => {
 	res.redirect('https://www.youtube.com/watch?v=2HKbbDukbJE&list=RD2HKbbDukbJE');
+});
+
+app.get('/home', (req,res) => {
+	//se la richiesta arriva da /api/auth/sessid  o /login accetta, altrimenti redirecta in no_auth
+	if (req.headers.referer === 'http://localhost:8000/api/auth/sessid'){
+		res.sendFile(path.join(__dirname, 'public/home.html'));
+	}
+	else if (req.headers.referer === 'http://localhost:8000/login'){
+		res.sendFile(path.join(__dirname, 'public/home.html'));
+	}
+	else{
+		res.sendFile(path.join(__dirname, 'public/no_auth.html'));
+	}
 });
 
 app.listen(PORT, HOST);
