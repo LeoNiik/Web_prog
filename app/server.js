@@ -123,6 +123,9 @@ app.post('/api/chat/', async (req,res) => {
 
 		//trova la conv_id a cui partecipano entrambi
 		
+		const sender_name = await client.query('SELECT username FROM Users WHERE id = $1', [sender_id]);
+		const receiver_name = await client.query('SELECT username FROM Users WHERE id = $1', [receiver_id.rows[0].id]);
+		
 		conv_id = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1 INTERSECT SELECT conversation_id FROM Conversation_Participants WHERE user_id = $2', [sender_id, receiver_id.rows[0].id]);
 		
 		if(conv_id.rows.length === 0){
@@ -130,24 +133,35 @@ app.post('/api/chat/', async (req,res) => {
 		}
 		//seleziono tutti i messaggi della conversazione
 		const messages = await client.query('SELECT content,timestamp FROM Messages WHERE conversation_id = $1', [conv_id.rows[0].conversation_id]);
-		if(messages.rows.length === 0){
-			res.status(401).send({status : "No messages found"});
-		}
+
+		//sorto messaggi per timestamp
+		messages.rows.sort((a,b) => {
+			return a.timestamp - b.timestamp;
+		});
+		//return the conversation as HTML
+
 		let dinamicContent = '';
 		messages.rows.forEach(element => {
 			const {content, timestamp} = element;
 			let time = utils.extractTime(timestamp);
 			console.log(content,time);
+
+			const name = (sender_id === sender_id) ? sender_name : receiver_name;
 			
 			dinamicContent += 
 			'<div class="message">\
-				<p>'+content+'</p>\
-				<span class="time">'+time+'</span>\
+				<div class="message-content">\
+					<p>'+name + ':' + content +'</p>\
+				</div>\
+				<div class="message-info">\
+					<span class="message-time">'+time+'</span>\
+				</div>\
 			</div>'
 		});
 		res.status(201).send({
 			status : "success",
 			content : dinamicContent
+
 		});
 		
 	} catch (error) {

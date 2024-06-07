@@ -15,9 +15,9 @@ document.addEventListener("DOMContentLoaded", function() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data) 
             };
-            fetch('http://192.168.1.38:8000/api/auth/sessid', options)
+            fetch('http://localhost:8000/api/auth/sessid', options)
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
@@ -55,7 +55,7 @@ function forgotHandler() {
       },
       body: JSON.stringify(data)
     };
-    fetch('http://192.168.1.38:8000/api/forgot', options)
+    fetch('http://localhost:8000/api/forgot', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
@@ -95,7 +95,7 @@ function loginHandler() {
       body: JSON.stringify(data)
     };
     console.log(options.body)
-    fetch('http://192.168.1.38:8000/api/login', options)
+    fetch('http://localhost:8000/api/login', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
@@ -173,7 +173,7 @@ function signupHandler() {
       body: JSON.stringify(data)
     };
 
-    fetch('http://192.168.1.38:8000/api/signup', options)
+    fetch('http://localhost:8000/api/signup', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);

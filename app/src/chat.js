@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
 ///poroceopces//////
 }); 
 
+//
+
 function sendMessage() {
 
     const messageInput = document.getElementById('new-message');
@@ -41,7 +43,7 @@ function registerMessage(){
         },
         body: JSON.stringify({id, message, receiver, shownTime})
     };
-    fetch('http://192.168.1.38:8000/api/message', options)
+    fetch('http://localhost:8000/api/message', options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -64,7 +66,7 @@ function showConvs(){
         'Content-Type': 'application/json'
         },
     };
-    fetch('http://192.168.1.38:8000/api/convs/'+id, options)
+    fetch('http://localhost:8000/api/convs/'+id, options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -103,7 +105,7 @@ function searchConv() {
         },
         convName
     };
-    fetch('http://192.168.1.38:8000/api/convs/'+id+'/search', options)
+    fetch('http://localhost:8000/api/convs/'+id+'/search', options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -128,14 +130,34 @@ function searchConv() {
 
 //     //mando una post
 // }
-function showChat(){
+function showChat(name){
     let id = sessionStorage.getItem('sessid');
-    fetch('http:/192.168.1.38:8000/api/chat/'+id)
+    const data = { 
+        id,
+        name
+    };     
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    };
+    fetch('http://localhost/api/chat', options)
+    .then(response => response.json())
     .then(data => {
         console.log(data);
-    })
-    .catch(error => console.error('Error:', error));
-    return;
+        if(data.status === 'success'){
+            //got conversations
+            messages.innerHTML = data.content;
+            assignEventListeners();
+        }
+        else{
+            //error in the backend
+            sidebar.innerHTML = data.content;
+            assignEventListeners();
+        }
+    })  
 }
 
 function assignEventListeners() {
