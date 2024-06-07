@@ -55,7 +55,7 @@ async function generateUniqueID() {
     while (!isUnique) {
         id = utils.generateRandomString(32);
 
-        const res = await client.query('SELECT id FROM users WHERE id = $1', [id]);
+        const res = await client.query('SELECT id FROM users WHERE session_id = $1', [id]);
         if (res.rows.length === 0) {
             isUnique = true;
         }
@@ -107,28 +107,52 @@ app.get("/api/convs/:id", async (req, res) => {
 	}
 });
 
-app.get("/api/chat/:id", async (req, res) => {
-	const id = req.params.id;
-	client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id WHERE user_id = ($1)'
-	,[id], (err, result) => {
-		if (err) {
-			console.error('Error executing query', err);
-			res
+app.post('/api/chat/', async (req,res) => {
+	//prendo il sessid e il ricevente
+	const {sessid, receiver} = req.body;
+	try {
+		const user = await client.query('SELECT id FROM Users WHERE session_id = $1', [sessid]);
+		if(user.rows.length === 0){
+			res.status(401).send({status : "User not found"});
 		}
-		//return the conversation as HTML
+		const sender_id = user.rows[0].id;
+		const receiver_id = await client.query('SELECT id FROM Users WHERE username = $1', [receiver]);
+		if(receiver_id.rows.length === 0){
+			res.status(401).send({status : "Receiver not found"});
+		}
+
+		//trova la conv_id a cui partecipano entrambi
+		
+		conv_id = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1 INTERSECT SELECT conversation_id FROM Conversation_Participants WHERE user_id = $2', [sender_id, receiver_id.rows[0].id]);
+		
+		if(conv_id.rows.length === 0){
+			res.status(401).send({status : "No conversation found"});
+		}
+		//seleziono tutti i messaggi della conversazione
+		const messages = await client.query('SELECT content,timestamp FROM Messages WHERE conversation_id = $1', [conv_id.rows[0].conversation_id]);
+		if(messages.rows.length === 0){
+			res.status(401).send({status : "No messages found"});
+		}
 		let dinamicContent = '';
-		result.rows.forEach(element => {
-			const {conv_id,conv_name, lastUpdate} = element;
+		messages.rows.forEach(element => {
+			const {content, timestamp} = element;
+			let time = utils.extractTime(timestamp);
+			console.log(content,time);
+			
 			dinamicContent += 
-			"<div class='sidebar-entry'>\
-				<label>"+conv_name +" "+lastUpdate+"</label>\
-			</div>";
+			'<div class="message">\
+				<p>'+content+'</p>\
+				<span class="time">'+time+'</span>\
+			</div>'
 		});
 		res.status(201).send({
-			stasus : "success",
+			status : "success",
 			content : dinamicContent
 		});
-	});
+		
+	} catch (error) {
+		console.log('Error during conversation query')
+	}
 });
 
 			
@@ -165,7 +189,7 @@ app.post('/api/login', async (req, res) => {
 	
 	// Handle login logic here
 	
-	const { username, password , remember_me} = req.body;
+	const { username, password} = req.body;
 	try {
 
 		let user = await getUser(username);
@@ -183,28 +207,56 @@ app.post('/api/login', async (req, res) => {
 		}
 		
 		// Se le credenziali sono valide, autentica l'utente
-		let sessionid = '';
-		let userid = user.rows[0].id;
-		if (remember_me) {
-			id = utils.generateRandomString(32);
-			await client.query('UPDATE Users SET session_id = $1 WHERE username = $2', [sessionid, username]);
-			//aggiorna il sessid
-		}
+		let sessionid = utils.generateRandomString(32);
+		await client.query('UPDATE Users SET session_id = $1 WHERE username = $2', [sessionid, username]);
+
+
 		res.status(200).send({
 			status : "success",
-			id : userid,
 			sessid : sessionid
 		});
 		//genera il sessid
 		//aggiorna il sessid
 		//console loggo
 		console.log('Utente autenticato:', remember_me);
-		console.log('Sessid:', id);
+		console.log('Sessid:', sessionid);
 		
 		
 	} catch (error) {
 		console.error('Errore durante il login:', error);
 		res.status(500).send({status : "internal error"});
+	}
+});
+
+app.post('/api/message', async (req,res) => {
+	const {sessid, message, receiver, time} = req.body;
+	try {
+		const user = await client.query('SELECT id FROM Users WHERE session_id = $1', [sessid]);
+		if(user.rows.length === 0){
+			res.status(401).send({status : "User not found"});
+		}
+		const sender_id = user.rows[0].id;
+		const receiver_id = await client.query('SELECT id FROM Users WHERE username = $1', [receiver]);
+		if(receiver_id.rows.length === 0){
+			res.status(401).send({status : "Receiver not found"});
+		}
+
+		//trova la conv_id a cui partecipano entrambi
+		
+		conv_id = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1 INTERSECT SELECT conversation_id FROM Conversation_Participants WHERE user_id = $2', [sender_id, receiver_id.rows[0].id]);
+		
+		if(conv_id.rows.length === 0){
+			res.status(401).send({status : "No conversation found"});
+		}
+		//inserisci il messaggio
+		await client.query('INSERT INTO Messages (conversation_id, sender_id, content, timestamp) VALUES ($1, $2, $3, $4)', [conv_id.rows[0].conversation_id, sender_id, message, time]);
+		if (err) {
+			console.error('Error executing query', err);
+			res.status(401).send({status : "Error during message query"});
+		}
+		res.status(200).send({status : "success"});
+	} catch (error) {
+		console.log('Error during message query')
 	}
 });
 
@@ -229,8 +281,6 @@ app.post('/api/convs/:id/search', async (req,res) => {
 	console.log(convName);
 	try {
 
-		//GESTIRE USERID COME IL SESSIONID , stringa alfanumerica 32 char univoca
-
 		client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id \
 		JOIN users ON session_idWHERE session_id = ($1) AND name LIKE ($2)'
 		,[id, convName], (err, result) => {
@@ -246,17 +296,17 @@ app.post('/api/convs/:id/search', async (req,res) => {
 				});
 				return;
 			}
-
+			console.log(result);
 			//return the conversation as HTML
 			//TODO order the convs by lastUpdate
 			let dinamicContent = '';
 			result.rows.forEach(element => {
-			const {conversation_id,name, updated_at} = element;
+			const {name, updated_at} = element;
 			let time = utils.extractTime(updated_at);
-			console.log(conversation_id,name,time);
+			console.log(name,time);
 			
 			dinamicContent += 
-			'<div class="sidebar-entry" id="'+conversation_id+'">\
+			'<div class="sidebar-entry">\
 				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
 				<div class="chat-info">\
 					<span class="chat-name">'+name+'</span>\
@@ -301,7 +351,6 @@ app.post('/api/signup', async (req, res) => {
 	let user = await getUser(username);
 	console.log(user);
 
-	let id = generateUniqueID();
 	if(user){
 		return res.status(401).send({status : 'User '+username+' already exists'})
 	}
@@ -313,8 +362,8 @@ app.post('/api/signup', async (req, res) => {
 		console.log(password,hashedPassword)
 		// Inserisci il nuovo utente nel database
 		await client.query(
-			'INSERT INTO Users (username, password, id) VALUES ($1,$2)',
-			[username,hashedPassword,id]
+			'INSERT INTO Users (username, password) VALUES ($1,$2)',
+			[username,hashedPassword]
 		);
 			
 		res.status(200).send({status : "success"});
@@ -345,7 +394,7 @@ app.listen(PORT, HOST);
 
 
 // CREATE TABLE Users (
-//     id VARCHAR(32) PRIMARY KEY,
+//     id SERIAL PRIMARY KEY,
 //     username VARCHAR(50) NOT NULL UNIQUE,
 //     password VARCHAR(255) NOT NULL,
 //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

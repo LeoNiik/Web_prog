@@ -5,9 +5,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 ///poroceopces//////
 }); 
 
-function isValid(str) {
-    return !(str === '');
-}
 function sendMessage() {
 
     const messageInput = document.getElementById('new-message');
@@ -15,10 +12,8 @@ function sendMessage() {
     const message = messageInput.value.trim();
     console.log("Messaggio da inviare: " + message);
     
-    if(!isValid(message)) return;
-    let time = new Date();
-    let shownTime = time.getHours()+':'+time.getMinutes();
-    registerMessage();
+    if(message==='') return;
+    let shownTime = registerMessage(message);
     //forse si puo fare ritornare al backend l ora im modo che glio orari siano piu consistenti
     if (message !== '') {
         console.log("Messaggio inviato: " + message);
@@ -32,9 +27,32 @@ function sendMessage() {
         </div>\
     </div>';
 }
-
+//send the message (with time, sender, receiver) to the backend
 function registerMessage(){
-    //send message to the backend, to store it
+    let id = sessionStorage.getItem('sessid');
+    let message = document.getElementById('new-message').value;
+    let receiver = document.getElementById('contact-name').value;
+    let time = new Date();
+    let shownTime = time.getHours()+':'+time.getMinutes();
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({id, message, receiver, shownTime})
+    };
+    fetch('http://192.168.1.38:8000/api/message', options)
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        if(data.status === 'success'){
+            //message sent
+        }
+        else{
+            //error in the backend
+        }
+    })
+    
 }
 function showConvs(){
     let id = localStorage.getItem('sessid');
@@ -46,7 +64,7 @@ function showConvs(){
         'Content-Type': 'application/json'
         },
     };
-    fetch('http://192.168.1.48:8000/api/convs/'+id, options)
+    fetch('http://192.168.1.38:8000/api/convs/'+id, options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -69,6 +87,7 @@ function showConvs(){
 function logout() {
     //tutto sminchiato 
     sessionStorage.removeItem('sessid');
+    sessionStorage.removeItem('remember_me');
     window.location.href = '/login';
 }
 
@@ -84,13 +103,13 @@ function searchConv() {
         },
         convName
     };
-    fetch('http://192.168.1.48:8000/api/convs/'+id+'/search', options)
+    fetch('http://192.168.1.38:8000/api/convs/'+id+'/search', options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
         if(data.status === 'success'){
             //got conversations
-            sidebar.innerHTML += data.content;
+            sidebar.innerHTML = data.content;
             assignEventListeners();
         }
         else{
@@ -102,9 +121,16 @@ function searchConv() {
     .catch(error => console.error('Error:', error));
     return;
 }
+//prendo in input il nome dell' utente della chat e chiedo al backend la chat
+
+// function showChat(nome){
+//     let id = sessionStorage.getItem('sessid');
+
+//     //mando una post
+// }
 function showChat(){
-    let id = sessionStorage.getItem('uid');
-    fetch('http:/192.168.1.48:8000/api/chat/'+id)
+    let id = sessionStorage.getItem('sessid');
+    fetch('http:/192.168.1.38:8000/api/chat/'+id)
     .then(data => {
         console.log(data);
     })

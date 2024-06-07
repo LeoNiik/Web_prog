@@ -4,25 +4,29 @@ document.addEventListener("DOMContentLoaded", function() {
     const sessid = sessionStorage.getItem('sessid');
     //se c'è un sessid, reindirizzo alla home
     if(sessid){
-        const data = {
-            sessid
-        };
-        const options = {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        };
-        fetch('http://192.168.1.48:8000/api/auth/sessid', options)
-        .then(response => response.json())
-        .then(data => {
-            console.log('Success:', data);
-            if(data.status == 'success'){
-                //login succesful
-                window.location.href = '/home';
-            }
-        });
+
+        remember_me = sessionStorage.getItem('remember_me');
+        if(remember_me){
+            const data = {
+                sessid
+            };
+            const options = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+            };
+            fetch('http://192.168.1.38:8000/api/auth/sessid', options)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                if(data.status == 'success'){
+                    //login succesful
+                    window.location.href = '/home';
+                }
+            });
+        }
     }
     document.addEventListener("keypress", function(event) {
         // If the user presses the "Enter" key on the keyboard
@@ -51,7 +55,7 @@ function forgotHandler() {
       },
       body: JSON.stringify(data)
     };
-    fetch('http://192.168.1.48:8000/api/forgot', options)
+    fetch('http://192.168.1.38:8000/api/forgot', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
@@ -81,8 +85,7 @@ function loginHandler() {
 
     const data = {
         username,
-        password,
-        remember_me
+        password
     };
     const options = {
       method: 'POST',
@@ -92,7 +95,7 @@ function loginHandler() {
       body: JSON.stringify(data)
     };
     console.log(options.body)
-    fetch('http://localhost:8000/api/login', options)
+    fetch('http://192.168.1.38:8000/api/login', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
@@ -101,7 +104,10 @@ function loginHandler() {
             sessionStorage.removeItem('sessid');
             //login succesful
 
-            if(remember_me) sessionStorage.setItem('sessid', data.sessid);
+            sessionStorage.setItem('sessid', data.sessid);
+            if(remember_me){
+                sessionStorage.setItem('remember_me', remember_me);
+            }
             window.location.href = '/home';
         }
         else{
@@ -167,7 +173,7 @@ function signupHandler() {
       body: JSON.stringify(data)
     };
 
-    fetch('http://192.168.1.48:8000/api/signup', options)
+    fetch('http://192.168.1.38:8000/api/signup', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
