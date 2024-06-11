@@ -1,5 +1,21 @@
+
+const IP ='192.168.1.38';
+
 document.addEventListener("DOMContentLoaded", function() {
 
+    document.addEventListener("keypress", function(event) {
+        // If the user presses the "Enter" key on the keyboard
+        if (event.key === "Enter") {
+          // Cancel the default action, if needed
+          event.preventDefault();
+          // Trigger the button element with a click
+          document.getElementById('login-btn').click();
+        }
+    });
+
+});
+
+function authSessid(){
     //prendo il sessid
     const sessid = sessionStorage.getItem('sessid');
     //se c'è un sessid, reindirizzo alla home
@@ -17,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function() {
             },
             body: JSON.stringify(data) 
             };
-            fetch('http://localhost:8000/api/auth/sessid', options)
+            fetch('http://'+IP+':8000/api/auth/sessid', options)
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
@@ -28,18 +44,7 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         }
     }
-    document.addEventListener("keypress", function(event) {
-        // If the user presses the "Enter" key on the keyboard
-        if (event.key === "Enter") {
-          // Cancel the default action, if needed
-          event.preventDefault();
-          // Trigger the button element with a click
-          document.getElementById('login-btn').click();
-        }
-    });
-
-});
-
+}
 function forgotHandler() {
     username = document.getElementById('username').value
     password = document.getElementById('password').value
@@ -55,7 +60,7 @@ function forgotHandler() {
       },
       body: JSON.stringify(data)
     };
-    fetch('http://localhost:8000/api/forgot', options)
+    fetch('http://'+IP+':8000/api/forgot', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
@@ -95,7 +100,7 @@ function loginHandler() {
       body: JSON.stringify(data)
     };
     //console.log(options.body)
-    fetch('http://localhost:8000/api/login', options)
+    fetch('http://'+IP+':8000/api/login', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);
@@ -147,6 +152,7 @@ function signupHandler() {
 
     let username = document.getElementById('username').value;
     let password = document.getElementById('password').value;
+    let email = document.getElementById('email').value;
     let conf_password = document.getElementById('conf-password').value;
     let btn = document.getElementById('login-btn');
     btn.innerText = '. . .';
@@ -163,7 +169,8 @@ function signupHandler() {
     }
     const data = {
         username,
-        password
+        password,
+        email
     };
     const options = {
       method: 'POST',
@@ -173,7 +180,7 @@ function signupHandler() {
       body: JSON.stringify(data)
     };
 
-    fetch('http://localhost:8000/api/signup', options)
+    fetch('http://'+IP+':8000/api/signup', options)
     .then(response => response.json())
     .then(data => {
         console.log('Success:', data);

@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS Users;
 CREATE TABLE Users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     session_id VARCHAR(32) UNIQUE 
@@ -32,6 +33,25 @@ CREATE TABLE Conversation_Participants (
     conversation_id INT REFERENCES Conversations(id) ON DELETE CASCADE,
     user_id INT REFERENCES Users(id) ON DELETE CASCADE,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+-- Create custom type for status
+CREATE TYPE friend_status AS ENUM ('pending', 'accepted', 'declined');
+
+-- Drop the friends table if it exists
+DROP TABLE IF EXISTS friends;
+
+-- Create the friends table
+CREATE TABLE friends (
+    user_id INT,
+    friend_id INT,
+    status friend_status DEFAULT 'pending',
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, friend_id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (friend_id) REFERENCES users(id)
 );
 
 -- DROP TABLE IF EXISTS friends; 
@@ -54,9 +74,3 @@ CREATE TABLE Messages (
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(50) DEFAULT 'sent'
 );
-
-INSERT INTO Conversations (name) VALUES ('New Conversation') RETURNING id;
-INSERT INTO Conversations (name) VALUES ('Francesco') RETURNING id;
-
-INSERT INTO Conversation_Participants (conversation_id, user_id) VALUES (1, 1);
-INSERT INTO Conversation_Participants (conversation_id, user_id) VALUES (2, 1);

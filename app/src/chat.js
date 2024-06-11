@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 ///poroceopces//////
 }); 
 
+const IP = '192.168.1.38';
 //
 
 function sendMessage() {
@@ -43,15 +44,15 @@ function registerMessage(){
         },
         body: JSON.stringify({id, message, receiver, shownTime})
     };
-    fetch('http://localhost:8000/api/message', options)
+    fetch('http://'+IP+':8000/api/message', options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
         if(data.status === 'success'){
-            //message sent
+            console.log('message sent');
         }
         else{
-            //error in the backend
+            console.log('message not sent');
         }
     })
     
@@ -66,7 +67,7 @@ function showConvs(){
         'Content-Type': 'application/json'
         },
     };
-    fetch('http://localhost:8000/api/convs/'+id, options)
+    fetch('http://'+IP+':8000/api/convs/'+id, options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -105,7 +106,7 @@ function searchConv() {
         },
         convName
     };
-    fetch('http://localhost:8000/api/convs/'+id+'/search', options)
+    fetch('http://'+IP+':8000/api/convs/'+id+'/search', options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -130,6 +131,26 @@ function searchConv() {
 
 //     //mando una post
 // }
+
+function getFriends(){
+    let id = localStorage.getItem('sessid');
+
+    const options = {
+        method: 'GET',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+    };
+    fetch('http://'+IP+':8000/api/friends/'+id, options)
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        return data;
+    })
+    .catch(error => console.error('Error:', error));
+    return;
+}
+
 function showChat(name){
     let id = sessionStorage.getItem('sessid');
     const data = { 
@@ -143,7 +164,7 @@ function showChat(name){
         },
         body: JSON.stringify(data)
     };
-    fetch('http://localhost/api/chat', options)
+    fetch('http://'+IP+':8000/api/chat', options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -157,138 +178,243 @@ function showChat(name){
             sidebar.innerHTML = data.content;
             assignEventListeners();
         }
-    })  
+    });  
 }
 
+//risolvere problema dei click esponenziali
 function assignEventListeners() {
     newChatListeners();
     messageListeners();
     moreOptionsListeners();
     newFriendsListeners();
     searchConvListeners();
+    friendModalListeners();
     logoutListeners();
+    manageFriendsListeners();
+}
+function newChatListeners(){
+    const modal = document.getElementById('popup-newchat');
+    const newChatButton = document.getElementById('new-chat');
 
-    function newChatListeners(){
+    newChatButton.addEventListener('click', function () {
+        // Azione da eseguire quando si clicca sull'icona
+        console.log('Nuova chat cliccata!');    
+        // Puoi anche aprire il modal per creare una nuova chat, per esempio
         const modal = document.getElementById('popup-newchat');
-        const newChatButton = document.getElementById('new-chat');
-
-        newChatButton.addEventListener('click', function () {
-            // Azione da eseguire quando si clicca sull'icona
-            console.log('Nuova chat cliccata!');    
-            // Puoi anche aprire il modal per creare una nuova chat, per esempio
-            const modal = document.getElementById('popup-newchat');
-            modal.style.display = 'block';
-        });
-        // Chiudi il modal quando si clicca sulla 'x'
-        const closeButton = modal.querySelector('.close-button');
-        
-        closeButton.addEventListener('click', function () {
-            const modal = document.getElementById('popup-newchat');
-            modal.style.display = 'none';
-        });
+        modal.style.display = 'block';
+    });
+    // Chiudi il modal quando si clicca sulla 'x'
+    const closeButton = modal.querySelector('.close-button');
     
-        // Chiudi il modal quando si clicca fuori dalla finestra del modal
-        window.addEventListener('click', function (event) {
-            const modal = document.getElementById('popup-newchat');
-            if (event.target == modal) {
-                modal.style.display = 'none';
-            }
-        });
-    }
-    function messageListeners() {
-        const messageInput = document.getElementById('new-message');
-        const messageOutput = document.getElementById('messages');
-        //manda messaggio quando si preme enter
-        messageInput.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                sendMessage();
-            }
-        
-        });
-    }
-    function moreOptionsListeners() {
-        const dropdownButton = document.getElementById('drop-btn');
-        const dropdown = document.getElementById('dropdown');
+    closeButton.addEventListener('click', function () {
+        const modal = document.getElementById('popup-newchat');
+        modal.style.display = 'none';
+    });
 
-        dropdownButton.addEventListener('click', (event) => {
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-            event.stopPropagation(); // Prevent the event from bubbling up
-        });
+    // Chiudi il modal quando si clicca fuori dalla finestra del modal
+    window.addEventListener('click', function (event) {
+        const modal = document.getElementById('popup-newchat');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+function messageListeners() {
+    const messageInput = document.getElementById('new-message');
+    const messageOutput = document.getElementById('messages');
+    //manda messaggio quando si preme enter
+    messageInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendMessage();
+        }
+    
+    });
+}
+function moreOptionsListeners() {
+    const dropdownButton = document.getElementById('drop-btn');
+    const dropdown = document.getElementById('dropdown');
 
-        window.addEventListener('click', function () {
-            dropdown.style.display = 'none';
-        });
+    dropdownButton.addEventListener('click', (event) => {
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        event.stopPropagation(); // Prevent the event from bubbling up
+    });
 
-        dropdown.addEventListener('click', function(event) {
-            event.stopPropagation(); // Prevent the event from bubbling up
-        }); 
-    }
-    function newFriendsListeners() {
+    window.addEventListener('click', function () {
+        dropdown.style.display = 'none';
+    });
+
+    dropdown.addEventListener('click', function(event) {
+        event.stopPropagation(); // Prevent the event from bubbling up
+    }); 
+}
+function newFriendsListeners() {
+    const modal = document.getElementById('popup-newfriend');
+    const newFriendButton = document.getElementById('new-friend');
+    newFriendButton.addEventListener('click', function () {
+        // Azione da eseguire quando si clicca sull'icona
+        // Puoi anche aprire il modal per creare una nuova chat, per esempio
         const modal = document.getElementById('popup-newfriend');
-        const newFriendButton = document.getElementById('new-friend');
-        newFriendButton.addEventListener('click', function () {
-            // Azione da eseguire quando si clicca sull'icona
-            console.log('Nuova chat cliccata!');
-            // Puoi anche aprire il modal per creare una nuova chat, per esempio
-            const modal = document.getElementById('popup-newfriend');
-            modal.style.display = 'block';
-        });
-        // Chiudi il modal quando si clicca sulla 'x'
-        const closeButton = modal.querySelector('.close-button');
-        
-        closeButton.addEventListener('click', function () {
-            const modal = document.getElementById('popup-newfriend');
-            modal.style.display = 'none';
-        });
+        modal.style.display = 'block';
+    });
+    // Chiudi il modal quando si clicca sulla 'x'
+    const closeButton = modal.querySelector('.close-button');
     
-        // Chiudi il modal quando si clicca fuori dalla finestra del modal
-        window.addEventListener('click', function (event) {
-            const modal = document.getElementById('popup-newfriend');
-            if (event.target == modal) {
-                modal.style.display = 'none';
-            }
-        });
+    closeButton.addEventListener('click', function () {
+        const modal = document.getElementById('popup-newfriend');
+        modal.style.display = 'none';
+    });
+
+    // Chiudi il modal quando si clicca fuori dalla finestra del modal
+    window.addEventListener('click', function (event) {
+        const modal = document.getElementById('popup-newfriend');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
+function searchConvListeners(){
+    const searchButton = document.getElementById('search-conv');
+    searchButton.addEventListener('click', () => {
+        console.log('click search');    
+        searchConv();
+    });
+}
+function logoutListeners(){
+    const searchButton = document.getElementById('logout');
+    searchButton.addEventListener('click', () => {
+        logout();
+    });
+}
+function friendModalListeners(){
+    const subFriend = document.getElementById("sub-friend");
+    subFriend.addEventListener('click', ()=>{
+        console.log("friends clicked");
+        newFriend();
+    });
+}
+function manageFriendsListeners(){
+    const button = document.getElementById("manage-friend");
+    const modal = document.getElementById('popup-manager');
+    button.addEventListener('click', function () {
+        // Azione da eseguire quando si clicca sull'icona
+        // Puoi anche aprire il modal per creare una nuova chat, per esempio
+        modal.style.display = 'block';
+    });
+    // Chiudi il modal quando si clicca sulla 'x'
+    const closeButton = modal.querySelector('.close-button');
+    
+    closeButton.addEventListener('click', function () {
+        modal.style.display = 'none';
+    });
+
+    // Chiudi il modal quando si clicca fuori dalla finestra del modal
+    window.addEventListener('click', function (event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    });
+}
+
+function getPendingRequests(){
+    let id = sessionStorage.getItem('sessid');
+    const options = {
+        method: 'GET',
+        headers: {
+        'Content-Type': 'application/json'
+        }
+    };
+    fetch('http://'+IP+':8000/api/friends/'+id+'/pending', options)
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        return data;
+    })
+    .catch(error => console.error('Error:', error));
+    return;
+}
+
+function refreshFriends(){
+    let pendingData = getPendingRequests();
+    // let friendData = getFriends();
+
+    const pendingDiv = document.getElementById("pending");
+    const activeDiv = document.getElementById("active-friends");
+
+    // if(friendData.status === 'success'){
+    //     activeDiv.innerHTML = friendData.content;
+    // }else{
+    //     activeDiv.innerHTML = "error fetching friends";
+    // }
+
+    if(pendingData.status === 'success'){
+        pendingDiv.innerHTML = pendingData.content;
+    }else{
+        pendingDiv.innerHTML = "error fetching friends";
     }
-    function searchConvListeners(){
-        const searchButton = document.getElementById('search-conv');
-        searchButton.addEventListener('click', () => {
-            console.log('click search');    
-            searchConv();
-        });
-    }
-    function logoutListeners(){
-        const searchButton = document.getElementById('logout');
-        searchButton.addEventListener('click', () => {
-            logout();
-        });
-    }
+}
+
+function newFriend(){
+    let id = sessionStorage.getItem('sessid');
+    const friendname = document.getElementById("friend-name").value;
+    let status_label = document.getElementById('res-friend');
+    const data = { 
+        friendname
+    };     
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    };
+    fetch('http://'+IP+':8000/api/friends/'+id, options)
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        if(data.status === 'success'){
+            //got conversations
+            status_label.innerText = "Sent friend request to "+ friendname;
+        }
+        else{
+            //error in the backend
+            status_label.innerText = data.status;
+        }
+    });  
 }
 
 //TODO
     //
-    //add a friendship system (update db)
+    //add a friendship system (update db) <-- leonardo
     //
-    //how to manage user session
+    //how to manage user session 
     //  
     //implement newChat(), newFriend(), retrieveChat(), 
     //
     // last but not least implement all real time message logic
     //
     //
+
 //TODO home.html
 
     // far funzionare tutti i bottoni e icone
     //
-    // rendere il sito responsive
+    // rendere il sito responsive    <------ nicolò
     //
-    // dividere i messaggi tra sx/dx ricevente/mittente, fixare in generale i messaggi
+    // dividere i messaggi tra sx/dx ricevente/mittente, fixare in generale i messaggi  <-------- Jakydibe project manager
     // es. in base alla lunghezza
     //
     //
+
 //TODO login.html
 
-    //implementare forgot-password e remember me
-    //
+    //implementare forgot-password e remember me (implementare mail)
+    //aggiorna tabella con mail
     //
 
+//TODO index.html    <------- nicolò
+//
+//tutto quanto
+//
+//

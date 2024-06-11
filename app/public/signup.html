@@ -19,6 +19,11 @@
         </div>
 
         <div class="input-box">
+            <input type="text" placeholder="Insert email" id="email"></input>
+            <i class='bx bxs-envelope'></i>
+        </div>
+
+        <div class="input-box">
             <input type="password" placeholder="Insert password" id="password"></input>
             <i class='bx bxs-lock-alt'></i>
         </div>
@@ -27,6 +32,9 @@
             <input type="password" placeholder="confirm password" id="conf-password"></input>
             <i class='bx bxs-lock-alt'></i>
         </div>
+
+        <!-- add a text to remind people to check email for confirmation -->
+        <label id="email-reminder">Please check your email for confirmation</label>
 
         <button class="btn" id="login-btn" onclick="signupHandler()">Sign Up</button>
         

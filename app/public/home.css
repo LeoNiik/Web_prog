@@ -277,6 +277,44 @@ body {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+/* .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: transparent;
+    min-width: 160px;
+    z-index: 1;
+    right: 0; 
+    border: none;
+    top: 40px; 
+}
+
+.drop-item {
+    margin: 10px 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.drop-item p {
+    display: block;
+    padding: 10px 15px;
+    background-color: #ffffff;
+    border-radius: 20px; 
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.drop-item i {
+   margin-right: 10px;
+}
+
+.drop-item p:hover {
+    background-color: #25d366;
+    color: #fff;
+} */
+/* Existing CSS */
 .dropdown-content {
     display: none;
     position: absolute;
@@ -296,7 +334,8 @@ body {
 }
 
 .drop-item p {
-    display: block;
+    display: flex; /* Use flexbox */
+    align-items: center; /* Center items vertically */
     padding: 10px 15px;
     background-color: #ffffff;
     border-radius: 20px; /* Makes the item look like a bubble */
@@ -307,8 +346,58 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
+.drop-item i {
+   margin-right: 10px;
+}
+
 /* Change color of drop-item on hover */
 .drop-item p:hover {
     background-color: #25d366;
     color: #fff;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between; /* Space between close button and refresh button */
+    align-items: center; /* Vertically align items */
+    margin-bottom: 20px; /* Space between header and content */
+}
+
+/* Close button styles */
+.close-button {
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: red;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Refresh button styles */
+#refresh-friends {
+    background-color: #25d366;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#refresh-friends:hover {
+    background-color: #1da955;
+}
+
+/* Friends and pending sections */
+#active-friends,
+#pending {
+    margin-bottom: 20px;
+}
+
+#active-friends h2,
+#pending h2 {
+    margin: 0;
 }

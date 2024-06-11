@@ -19,8 +19,8 @@
                 <div id="drop-btn"><i class="fas fa-ellipsis-h"></i></div>
                 <div class="dropdown-content" id="dropdown">
                     <div class="drop-item" id="new-friend"><p>Add new friend</p></div>
-                    <div class="drop-item" id="logout"><p>Add new friend</p></div>
-                    <div class="drop-item"><a href="#">Link 1</a></div>
+                    <div class="drop-item" id="manage-friend"><p>Manage friends</p></div>
+                    <div class="drop-item" id="logout"><p><i class='bx bxs-log-out' ></i>Log out</p></div>
                 </div>
                 <div id="new-chat"><i class="fas fa-pen" ></i></div>
             </div>
@@ -55,11 +55,22 @@
             <div class="modal-content">
                 <span class="close-button">&times;</span>
                 <h2>Add a new friend</h2>
-                <label for="chat-name">Insert username:</label>
-                <input type="text" id="chat-name" name="chat-name" required>                
-                <button type="submit">Crea Chat</button>
+                <label for="friend-name">Insert username:</label>
+                <input type="text" id="friend-name" name="friend-name" required> 
+                <button id="sub-friend">Crea Chat</button>
+                <label id="res-friend"></label>               
             </div>
             
+        </div>
+        <div id="popup-manager" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button id="refresh-friends" onclick="refreshFriends()">Refresh</button>
+                    <span class="close-button">&times;</span>
+                </div>
+                <div id="active-friends"><h2>Friends</h2></div>
+                <div id="pending"><h2>Pending Requests</h2></div>            
+            </div>
         </div>
         <div class="chat-wrapper">
             <div class="header">

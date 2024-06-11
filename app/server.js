@@ -7,6 +7,10 @@ var bodyParser = require('body-parser')
 const { createHash } = require('crypto');
 const utils = require('./utils');
 
+const nodemailer = require('nodemailer');
+
+
+
 
 //const result = createHash('sha256').update("bacon").digest('hex');
 // Constants
@@ -47,6 +51,44 @@ app.use((req, res, next) => {
 });
 // parse application/json
 app.use(bodyParser.json())
+
+// ritorno l' utente dato il sessid
+async function getUserBySessID(id) {
+	const result = await client.query('SELECT * FROM Users WHERE session_id = $1', [id]);
+	const user = result.rows[0];
+	return user;
+}
+
+const transporter = nodemailer.createTransport({
+	service: "Gmail",
+	host: "smtp.gmail.com",
+	port: 465,
+	secure: true,
+	auth: {
+	  user: "francolama21@gmail.com",
+	  pass: "lqrc wlaz stht fgnp",
+	},
+  });
+
+//send mail given the email and the message
+const sendEmail = (to, subject, text) => {
+	console.log(to);
+	const mailOptions = {
+	  from: 'francolama21@gmail.com',
+	  to: to,
+	  subject: subject,
+	  text: text,
+	};
+  
+	transporter.sendMail(mailOptions, (error, info) => {
+	  if (error) {
+		return console.log('Error while sending email:', error);
+	  }
+	  console.log('Email sent:', info.response);
+	});
+  };
+  
+
 
 async function generateUniqueID() {
 	let id;
@@ -106,6 +148,125 @@ app.get("/api/convs/:id", async (req, res) => {
 
 	} catch (error) {
 		
+	}
+});
+// add a new friend
+app.post('/api/friends/:id', async (req, res) => {
+	
+	// Handle login logic here
+	
+	const id = req.params.id;
+	const friendname = req.body.friendname;
+	console.log(friendname);
+	console.log(id);
+	try {
+
+		let user = await getUserBySessID(id);
+		console.log(user);
+		if (!user) {
+			return res.status(401).send({
+				status : "Error getting current user"
+			});
+		}
+		const friend_id = await client.query('SELECT id FROM Users WHERE username = $1', [friendname]);
+		//controllo se esiste gia la richiesta
+
+		const result = await client.query('SELECT * FROM friends WHERE user_id = $1 AND friend_id = $2', [user.id, friend_id.rows[0].id]);
+		if (result.rows.length != 0) {
+			res.status(401).send({status : "Friend request already sent"});
+		}
+
+		//controllare se le query ritornano qualcosa 
+		
+		
+		await client.query('INSERT INTO friends (user_id, friend_id) VALUES ($1, $2)', [user.id, friend_id.rows[0].id]);
+		res.status(200).send({status : "success"});
+
+	} catch (error) {
+		console.error('Errore durante adding friends:', error);
+		res.status(500).send({status : "internal error"});
+	}
+});
+
+app.get("/api/friends/:id", async (req, res) => {
+	try {
+		const id = req.params.id;
+
+		const result = await client.query('SELECT u.username AS friend_name\
+		FROM Users AS u\
+		JOIN friends AS f ON (u.id = f.friend_id OR u.id = f.user_id)\
+		JOIN Users AS current_user ON (f.user_id = current_user.id OR f.friend_id = current_user.id)\
+		WHERE current_user.session_id = $1\
+		  AND f.status = "accepted"\
+		  AND u.id != current_user.id;', [id]);
+
+		if (result.rows.length === 0) {
+			res.status(201).send({
+				status : "No conversations found",
+				content :dinamicContent  
+			});
+			return;
+		}
+
+		//return the conversation as HTML
+		//TODO order the convs by lastUpdate
+		let dinamicContent = '';
+
+		
+		result.rows.forEach(element => {
+			
+
+			dinamicContent += ''; 
+
+		});
+		res.status(201).send({
+			status : "success",
+			content : dinamicContent
+		});
+
+	} catch (error) {
+		
+	}
+});
+
+app.get("/api/friends/:id/pending", async (req, res) => {
+	try {
+		const id = req.params.id;
+
+		const result = await client.query('SELECT u.username AS friend_name\
+		FROM Users AS u\
+		JOIN friends AS f ON (u.id = f.friend_id OR u.id = f.user_id)\
+		JOIN Users AS current_user ON (f.user_id = current_user.id OR f.friend_id = current_user.id)\
+		WHERE current_user.session_id = $1\
+		  AND f.status = "pending"\
+		  AND u.id != current_user.id;', [id]);
+
+		if (result.rows.length === 0) {
+			res.status(201).send({
+				status : "No pending requests",
+				content :dinamicContent  
+			});
+			return;
+		}
+
+		//return the conversation as HTML
+		//
+		let dinamicContent = '<h2>Friends</h2>';
+
+		
+		result.rows.forEach(element => {
+			console.log(element);
+			dinamicContent += '<p>request from '+element+' </p><button ></button>'; 
+		});
+		res.status(201).send({
+			status : "success",
+			content : dinamicContent
+		});
+
+	} catch (error) {
+		res.status(201).send({
+			status : "internal error"
+		})
 	}
 });
 
@@ -356,15 +517,41 @@ app.post('/api/forgot', async (req,res) => {
 // Placeholder for POST /signup route
 app.post('/api/signup', async (req, res) => {
 	
-	const { username, password } = req.body;
+	const { username, password , email} = req.body;
 	let user = await getUser(username);
 	console.log(user);
 
 	if(user){
-		return res.status(401).send({status : 'User '+username+' already exists'})
+		return res.status(401).send({status : 'User '+ username+' already exists'})
 	}
 
 	try {
+
+		//genera link per verificare l'email
+		const verify_token = utils.generateRandomString(16);
+		const link = 'http://192.168.1.38:8000/verify?token='+verify_token;
+
+		//invia email di verifica
+		sendEmail(email, 'Verify your email', 'Hi Mr. ' + username + '. The man who sent this e-mail is very Gay\nClick on the link to verify your email: '+ link);
+
+		let clicked = false;
+		//crea un handler per il link
+		app.get('/verify', (req,res) => {
+			const token = req.query.token;
+			//verifica il token
+			if (token != verify_token){
+				res.status(401).send({status : "Invalid token"});
+			}
+			clicked = true;
+			res.status(200).send({status : "success"});
+		});
+
+		while(!clicked){
+			
+		}
+		//finche' non e' cliccato il link non continuare
+		
+
 		
 		// Hash della password
 		const hashedPassword = createHash('sha256').update(password).digest('hex');
@@ -404,7 +591,7 @@ app.get('/home', (req,res) => {
 	if (req.headers.referer === 'http://localhost:8000/api/auth/sessid'){
 		res.sendFile(path.join(__dirname, 'public/home.html'));
 	}
-	else if (req.headers.referer === 'http://localhost:8000/login'){
+	else if (req.headers.referer === 'http://192.168.1.38:8000/login'){
 		res.sendFile(path.join(__dirname, 'public/home.html'));
 	}
 	else{
