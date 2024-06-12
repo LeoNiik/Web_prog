@@ -239,7 +239,7 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 		JOIN Users AS current_user ON (f.user_id = current_user.id OR f.friend_id = current_user.id)\
 		WHERE current_user.session_id = $1\
 		  AND f.status = "pending"\
-		  AND u.id != current_user.id;', [id]);
+		  AND u.. != current_user.id;', [id]);
 
 		if (result.rows.length === 0) {
 			res.status(201).send({
