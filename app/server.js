@@ -66,7 +66,7 @@ const transporter = nodemailer.createTransport({
 	secure: true,
 	auth: {
 	  user: "francolama21@gmail.com",
-	  pass: "lqrc wlaz stht fgnp"
+	  pass: process.env.EMAIL_PASS
 	},
   });
 
@@ -219,6 +219,8 @@ app.post('/api/friends/:id/accept', async (req, res) => {
 			});
 		}
 		await client.query('UPDATE friends SET status = $1 WHERE user_id = $2 AND friend_id = $3', ['accepted', user.id, friend_id]);
+		await client.query('UPDATE friends SET status = $1 WHERE friend_id = $2 AND user_id = $3', ['accepted', user.id, friend_id]);
+		
 		res.status(200).send({
 			status : "success",
 			content : "Friend request accepted"
@@ -300,7 +302,7 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 		
 		result.rows.forEach(element => {
 			console.log(element.username+"negrooroo");
-			dinamicContent += '<div id='+element.username+' onclick="acceptFriend()"><p class="friend-entry">request from '+element.username+'</p><button>accept</button></div>'; 
+			dinamicContent += '<div id='+element.username+'><p class="friend-entry">request from '+element.username+'</p><button>accept</button></div>'; 
 		});
 		res.status(201).send({
 			status : "success",

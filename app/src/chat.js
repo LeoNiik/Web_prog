@@ -194,6 +194,7 @@ function assignEventListeners() {
     friendModalListeners();
     logoutListeners();
     manageFriendsListeners();
+    acceptFriendListeners();
     function newChatListeners(){
         const modal = document.getElementById('popup-newchat');
         const newChatButton = document.getElementById('new-chat');
@@ -322,8 +323,10 @@ function assignEventListeners() {
             console.log("friends clicked");
             newFriend();
         });
+    }
     function acceptFriendListeners(){
-        document.getElementById("friends-wrapper").addEventListener("click", function(event) {
+        const container = document.getElementById("friends-wrapper")
+        container.addEventListener("click", function(event) {
             // Verifica se l'elemento cliccato è quello desiderato (ad esempio, un elemento con la classe "friend-entry")
             if (event.target && event.target.classList.contains("friend-entry")) {
                 // Ottieni l'id dell'elemento cliccato (supponendo che l'id sia l'username)
@@ -336,7 +339,6 @@ function assignEventListeners() {
                 acceptFriend(clickedId);
             }
         });
-    }
     }
 }
 
