@@ -98,13 +98,16 @@ function searchConv() {
     const convName = document.getElementById('search-bar').value;
     let id = sessionStorage.getItem('sessid');
     let sidebar = document.getElementById('entries-wrapper');
-
+	console.log(convName);
+    const sendData = {
+        convName
+    };
     const options = {
         method: 'post',
         headers: {
         'Content-Type': 'application/json'
         },
-        convName
+        body: JSON.stringify(sendData)
     };
     fetch('http://'+IP+':8000/api/convs/'+id+'/search', options)
     .then(response => response.json())
@@ -191,133 +194,143 @@ function assignEventListeners() {
     friendModalListeners();
     logoutListeners();
     manageFriendsListeners();
-}
-function newChatListeners(){
-    const modal = document.getElementById('popup-newchat');
-    const newChatButton = document.getElementById('new-chat');
-
-    newChatButton.addEventListener('click', function () {
-        // Azione da eseguire quando si clicca sull'icona
-        console.log('Nuova chat cliccata!');    
-        // Puoi anche aprire il modal per creare una nuova chat, per esempio
+    function newChatListeners(){
         const modal = document.getElementById('popup-newchat');
-        modal.style.display = 'block';
-    });
-    // Chiudi il modal quando si clicca sulla 'x'
-    const closeButton = modal.querySelector('.close-button');
+        const newChatButton = document.getElementById('new-chat');
     
-    closeButton.addEventListener('click', function () {
-        const modal = document.getElementById('popup-newchat');
-        modal.style.display = 'none';
-    });
-
-    // Chiudi il modal quando si clicca fuori dalla finestra del modal
-    window.addEventListener('click', function (event) {
-        const modal = document.getElementById('popup-newchat');
-        if (event.target == modal) {
+        newChatButton.addEventListener('click', function () {
+            // Azione da eseguire quando si clicca sull'icona
+            console.log('Nuova chat cliccata!');    
+            // Puoi anche aprire il modal per creare una nuova chat, per esempio
+            const modal = document.getElementById('popup-newchat');
+            modal.style.display = 'block';
+        });
+        // Chiudi il modal quando si clicca sulla 'x'
+        const closeButton = modal.querySelector('.close-button');
+        
+        closeButton.addEventListener('click', function () {
+            const modal = document.getElementById('popup-newchat');
             modal.style.display = 'none';
-        }
-    });
-}
-function messageListeners() {
-    const messageInput = document.getElementById('new-message');
-    const messageOutput = document.getElementById('messages');
-    //manda messaggio quando si preme enter
-    messageInput.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-        }
+        });
     
-    });
+        // Chiudi il modal quando si clicca fuori dalla finestra del modal
+        window.addEventListener('click', function (event) {
+            const modal = document.getElementById('popup-newchat');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+    function messageListeners() {
+        const messageInput = document.getElementById('new-message');
+        const messageOutput = document.getElementById('messages');
+        //manda messaggio quando si preme enter
+        messageInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        
+        });
+    }
+    function moreOptionsListeners() {
+        const dropdownButton = document.getElementById('drop-btn');
+        const dropdown = document.getElementById('dropdown');
+    
+        dropdownButton.addEventListener('click', (event) => {
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            event.stopPropagation(); // Prevent the event from bubbling up
+        });
+    
+        window.addEventListener('click', function () {
+            dropdown.style.display = 'none';
+        });
+    
+        dropdown.addEventListener('click', function(event) {
+            event.stopPropagation(); // Prevent the event from bubbling up
+        }); 
+    }
+    function newFriendsListeners() {
+        const modal = document.getElementById('popup-newfriend');
+        const newFriendButton = document.getElementById('new-friend');
+        newFriendButton.addEventListener('click', function () {
+            closeDropdown();
+    
+            // Azione da eseguire quando si clicca sull'icona
+            // Puoi anche aprire il modal per creare una nuova chat, per esempio
+            modal.style.display = 'block';
+        });
+        // Chiudi il modal quando si clicca sulla 'x'
+        const closeButton = modal.querySelector('.close-button');
+        
+        closeButton.addEventListener('click', function () {
+            const modal = document.getElementById('popup-newfriend');
+            modal.style.display = 'none';
+        });
+    
+        // Chiudi il modal quando si clicca fuori dalla finestra del modal
+        window.addEventListener('click', function (event) {
+            const modal = document.getElementById('popup-newfriend');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+    function manageFriendsListeners(){
+        const button = document.getElementById("manage-friend");
+        const modal = document.getElementById('popup-manager');
+        button.addEventListener('click', function () {
+            closeDropdown();
+            // Azione da eseguire quando si clicca sull'icona
+            // Puoi anche aprire il modal per creare una nuova chat, per esempio
+            refreshFriends();
+            modal.style.display = 'block';
+        });
+        // Chiudi il modal quando si clicca sulla 'x'
+        const closeButton = modal.querySelector('.close-button');
+        
+        closeButton.addEventListener('click', function () {
+            modal.style.display = 'none';
+        });
+    
+        // Chiudi il modal quando si clicca fuori dalla finestra del modal
+        window.addEventListener('click', function (event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+    
+    function searchConvListeners(){
+        const searchButton = document.getElementById('search-conv');
+        searchButton.addEventListener('click', () => {
+            console.log('click search');    
+            searchConv();
+        });
+    }
+    function logoutListeners(){
+        const searchButton = document.getElementById('logout');
+    
+        searchButton.addEventListener('click', () => {
+            closeDropdown();
+            logout();
+        });
+    }
+    function friendModalListeners(){
+        const subFriend = document.getElementById("sub-friend");
+        subFriend.addEventListener('click', ()=>{
+            console.log("friends clicked");
+            newFriend();
+        });
+    }
 }
-function moreOptionsListeners() {
-    const dropdownButton = document.getElementById('drop-btn');
+
+function closeDropdown(){
     const dropdown = document.getElementById('dropdown');
+    dropdown.style.display = 'none';
 
-    dropdownButton.addEventListener('click', (event) => {
-        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-        event.stopPropagation(); // Prevent the event from bubbling up
-    });
-
-    window.addEventListener('click', function () {
-        dropdown.style.display = 'none';
-    });
-
-    dropdown.addEventListener('click', function(event) {
-        event.stopPropagation(); // Prevent the event from bubbling up
-    }); 
 }
-function newFriendsListeners() {
-    const modal = document.getElementById('popup-newfriend');
-    const newFriendButton = document.getElementById('new-friend');
-    newFriendButton.addEventListener('click', function () {
-        // Azione da eseguire quando si clicca sull'icona
-        // Puoi anche aprire il modal per creare una nuova chat, per esempio
-        const modal = document.getElementById('popup-newfriend');
-        modal.style.display = 'block';
-    });
-    // Chiudi il modal quando si clicca sulla 'x'
-    const closeButton = modal.querySelector('.close-button');
-    
-    closeButton.addEventListener('click', function () {
-        const modal = document.getElementById('popup-newfriend');
-        modal.style.display = 'none';
-    });
-
-    // Chiudi il modal quando si clicca fuori dalla finestra del modal
-    window.addEventListener('click', function (event) {
-        const modal = document.getElementById('popup-newfriend');
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
-    });
-}
-
-function searchConvListeners(){
-    const searchButton = document.getElementById('search-conv');
-    searchButton.addEventListener('click', () => {
-        console.log('click search');    
-        searchConv();
-    });
-}
-function logoutListeners(){
-    const searchButton = document.getElementById('logout');
-    searchButton.addEventListener('click', () => {
-        logout();
-    });
-}
-function friendModalListeners(){
-    const subFriend = document.getElementById("sub-friend");
-    subFriend.addEventListener('click', ()=>{
-        console.log("friends clicked");
-        newFriend();
-    });
-}
-function manageFriendsListeners(){
-    const button = document.getElementById("manage-friend");
-    const modal = document.getElementById('popup-manager');
-    button.addEventListener('click', function () {
-        // Azione da eseguire quando si clicca sull'icona
-        // Puoi anche aprire il modal per creare una nuova chat, per esempio
-        modal.style.display = 'block';
-    });
-    // Chiudi il modal quando si clicca sulla 'x'
-    const closeButton = modal.querySelector('.close-button');
-    
-    closeButton.addEventListener('click', function () {
-        modal.style.display = 'none';
-    });
-
-    // Chiudi il modal quando si clicca fuori dalla finestra del modal
-    window.addEventListener('click', function (event) {
-        if (event.target == modal) {
-            modal.style.display = 'none';
-        }
-    });
-}
-
-function getPendingRequests(){
+async function getPendingRequests(){
     let id = sessionStorage.getItem('sessid');
     const options = {
         method: 'GET',
@@ -325,20 +338,23 @@ function getPendingRequests(){
         'Content-Type': 'application/json'
         }
     };
-    fetch('http://'+IP+':8000/api/friends/'+id+'/pending', options)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
+    try {
+        const response = await fetch('http://' + IP + ':8000/api/friends/' + id + '/pending', options);
+        const data = await response.json();
         return data;
-    })
-    .catch(error => console.error('Error:', error));
-    return;
+    } catch (error) {
+        console.error('Error:', error);
+        return null;  // or you can return an empty array or object depending on your needs
+    }
 }
 
-function refreshFriends(){
-    let pendingData = getPendingRequests();
+async function refreshFriends(){
+    console.log('golem negro');
+    let pendingData = await getPendingRequests();
     // let friendData = getFriends();
-
+    console.log(pendingData);
+    if(!pendingData) return;
+    // if(!friendData) return;
     const pendingDiv = document.getElementById("pending");
     const activeDiv = document.getElementById("active-friends");
 

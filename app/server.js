@@ -231,32 +231,35 @@ app.get("/api/friends/:id", async (req, res) => {
 
 app.get("/api/friends/:id/pending", async (req, res) => {
 	try {
-		const id = req.params.id;
+		const sessid = req.params.id;
 
-		const result = await client.query('SELECT u.username AS friend_name\
-		FROM Users AS u\
-		JOIN friends AS f ON (u.id = f.friend_id OR u.id = f.user_id)\
-		JOIN Users AS current_user ON (f.user_id = current_user.id OR f.friend_id = current_user.id)\
-		WHERE current_user.session_id = $1\
-		  AND f.status = "pending"\
-		  AND u.. != current_user.id;', [id]);
+		let user = await getUserBySessID(sessid);
+		
+		if (!user) {
+			return res.status(401).send({
+				status : "Error getting current user"
+			});
+		}
 
+		console.log(user.id);
+		let result = await client.query(
+			"SELECT username FROM users JOIN (SELECT friend_id,status FROM friends JOIN users ON user_id=id WHERE id=$1 and status='pending') on id=friend_id;", [user.id]);
 		if (result.rows.length === 0) {
 			res.status(201).send({
 				status : "No pending requests",
-				content :dinamicContent  
+				content : dinamicContent  
 			});
 			return;
 		}
 
-		//return the conversation as HTML
-		//
-		let dinamicContent = '<h2>Friends</h2>';
+		//return the friend requests as HTML
+	
+		let dinamicContent = '<h2>Pending</h2>';
 
 		
 		result.rows.forEach(element => {
 			console.log(element);
-			dinamicContent += '<p>request from '+element+' </p><button ></button>'; 
+			dinamicContent += '<p>request from '+element.username+' <button>accept</button></p>'; 
 		});
 		res.status(201).send({
 			status : "success",
@@ -264,6 +267,7 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 		});
 
 	} catch (error) {
+		console.log(error);
 		res.status(201).send({
 			status : "internal error"
 		})
@@ -447,15 +451,18 @@ app.post('/api/auth/sessid', async (req,res) => {
 
 app.post('/api/convs/:id/search', async (req,res) => {
 	const id = req.params.id;
-	const convName = req.body
+	const convName = req.body.convName
 	console.log(convName);
 	try {
 
 		client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id \
-		JOIN users ON session_idWHERE session_id = ($1) AND name LIKE ($2)'
+		JOIN users ON Conversation_Participants.user_id=users.id WHERE session_id = ($1) AND name LIKE ($2)'
 		,[id, convName], (err, result) => {
 			if (err) {
 				console.error('Error executing query', err);
+			}
+			console.log(result);
+			if(result.rows.length === 0){
 				res.status(401).send(			
 					{status : "error",
 					content : 
@@ -466,7 +473,6 @@ app.post('/api/convs/:id/search', async (req,res) => {
 				});
 				return;
 			}
-			console.log(result);
 			//return the conversation as HTML
 			//TODO order the convs by lastUpdate
 			let dinamicContent = '';
