@@ -15,8 +15,10 @@ CREATE TABLE Users (
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    session_id VARCHAR(32) UNIQUE 
+    session_id VARCHAR(32) UNIQUE,
+    verify_token VARCHAR(32) UNIQUE
 );
 
 DROP TABLE IF EXISTS Conversations;

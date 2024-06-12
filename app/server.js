@@ -66,7 +66,7 @@ const transporter = nodemailer.createTransport({
 	secure: true,
 	auth: {
 	  user: "francolama21@gmail.com",
-	  
+	  pass: "lqrc wlaz stht fgnp"
 	},
   });
 
@@ -97,7 +97,7 @@ async function generateUniqueID() {
     while (!isUnique) {
         id = utils.generateRandomString(32);
 
-        const res = await client.query('SELECT id FROM users WHERE session_id = $1', [id]);
+        const res = await client.query('SELECT id FROM Users WHERE session_id = $1', [id]);
         if (res.rows.length === 0) {
             isUnique = true;
         }
@@ -151,14 +151,14 @@ app.get("/api/convs/:id", async (req, res) => {
 	}
 });
 // add a new friend
+
 app.post('/api/friends/:id', async (req, res) => {
 	
 	// Handle login logic here
 	
 	const id = req.params.id;
-	const friendname = req.body.friendname;
+	const friendname = req.body.name;
 	console.log(friendname);
-	console.log(id);
 	try {
 
 		let user = await getUserBySessID(id);
@@ -168,20 +168,61 @@ app.post('/api/friends/:id', async (req, res) => {
 				status : "Error getting current user"
 			});
 		}
+		console.log(user.id);
 		const friend_id = await client.query('SELECT id FROM Users WHERE username = $1', [friendname]);
 		//controllo se esiste gia la richiesta
 
 		const result = await client.query('SELECT * FROM friends WHERE user_id = $1 AND friend_id = $2', [user.id, friend_id.rows[0].id]);
-		if (result.rows.length != 0) {
-			res.status(401).send({status : "Friend request already sent"});
+		//controllo se l'altro utente ha gia' mandato una richiesta
+		const result2 = await client.query('SELECT * FROM friends WHERE user_id = $1 AND friend_id = $2', [friend_id.rows[0].id, user.id]);
+		if (result2.rows.length != 0) {
+			res.status(401).send({	
+				status : "success",
+				content : "This user already sent you a friend request go to manage friends to accept it"
+			});
+			return;
 		}
-
+		if (result.rows.length != 0) {
+			res.status(401).send({
+				status : "success",
+				content :  "Friend request already sent"
+			});
+		}
 		//controllare se le query ritornano qualcosa 
 		
 		
 		await client.query('INSERT INTO friends (user_id, friend_id) VALUES ($1, $2)', [user.id, friend_id.rows[0].id]);
-		res.status(200).send({status : "success"});
+		await client.query('INSERT INTO friends (friend_id, user_id) VALUES ($1, $2)', [user.id, friend_id.rows[0].id]);
+		
+		res.status(200).send({
+			status : "success",
+			content : "Sent friend request to "+friendname
+		});
 
+	} catch (error) {
+		console.error('Errore durante adding friends:', error);
+		res.status(500).send({status : "internal error"});
+	}
+});
+app.post('/api/friends/:id/accept', async (req, res) => {
+	
+	// Handle login logic here
+	const id = req.params.id;
+	const friend_id = req.body.friend_id;
+	
+	//update la table sostituendo pending con accepted
+	try {
+		let user = await getUserBySessID(id);
+		if (!user) {
+			return res.status(401).send({
+				status : "Error getting current user"
+			});
+		}
+		await client.query('UPDATE friends SET status = $1 WHERE user_id = $2 AND friend_id = $3', ['accepted', user.id, friend_id]);
+		res.status(200).send({
+			status : "success",
+			content : "Friend request accepted"
+		});
 	} catch (error) {
 		console.error('Errore durante adding friends:', error);
 		res.status(500).send({status : "internal error"});
@@ -189,47 +230,6 @@ app.post('/api/friends/:id', async (req, res) => {
 });
 
 app.get("/api/friends/:id", async (req, res) => {
-	try {
-		const id = req.params.id;
-
-		const result = await client.query('SELECT u.username AS friend_name\
-		FROM Users AS u\
-		JOIN friends AS f ON (u.id = f.friend_id OR u.id = f.user_id)\
-		JOIN Users AS current_user ON (f.user_id = current_user.id OR f.friend_id = current_user.id)\
-		WHERE current_user.session_id = $1\
-		  AND f.status = "accepted"\
-		  AND u.id != current_user.id;', [id]);
-
-		if (result.rows.length === 0) {
-			res.status(201).send({
-				status : "No conversations found",
-				content :dinamicContent  
-			});
-			return;
-		}
-
-		//return the conversation as HTML
-		//TODO order the convs by lastUpdate
-		let dinamicContent = '';
-
-		
-		result.rows.forEach(element => {
-			
-
-			dinamicContent += ''; 
-
-		});
-		res.status(201).send({
-			status : "success",
-			content : dinamicContent
-		});
-
-	} catch (error) {
-		
-	}
-});
-
-app.get("/api/friends/:id/pending", async (req, res) => {
 	try {
 		const sessid = req.params.id;
 
@@ -240,13 +240,55 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 				status : "Error getting current user"
 			});
 		}
-
-		console.log(user.id);
+		let dinamicContent = '<h2>Friends</h2>';
+		
 		let result = await client.query(
-			"SELECT username FROM users JOIN (SELECT friend_id,status FROM friends JOIN users ON user_id=id WHERE id=$1 and status='pending') on id=friend_id;", [user.id]);
+			"SELECT username FROM users JOIN (SELECT friend_id,status FROM friends JOIN users ON user_id=id WHERE id=$1 and status='accepted') on id=friend_id;", [user.id]);
 		if (result.rows.length === 0) {
+			dinamicContent += '<p>No friends</p>'
 			res.status(201).send({
-				status : "No pending requests",
+				status : "success",
+				content : dinamicContent  
+			});
+			return;
+		}
+		
+		//return the conversation as HTML
+		result.rows.forEach(element => {
+			
+			console.log(element.username);
+			dinamicContent += ''; 
+			
+		});
+		res.status(201).send({
+			status : "success",
+			content : dinamicContent
+		});
+		
+	} catch (error) {
+		console.log(error);
+	}
+});
+
+app.get("/api/friends/:id/pending", async (req, res) => {
+	try {
+		const sessid = req.params.id;
+		
+		let user = await getUserBySessID(sessid);
+		
+		if (!user) {
+			return res.status(401).send({
+				status : "Error getting current user"
+			});
+		}
+		
+		let dinamicContent = '<h2>Pending</h2>';
+		let result = await client.query(
+			"SELECT username FROM users JOIN (SELECT user_id,status FROM friends JOIN users ON user_id=id WHERE friend_id=$1 and status='pending') on id=user_id;", [user.id]);
+		if (result.rows.length === 0) {
+			dinamicContent += 'No pendings requests';
+			res.status(201).send({
+				status : "success",
 				content : dinamicContent  
 			});
 			return;
@@ -254,12 +296,11 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 
 		//return the friend requests as HTML
 	
-		let dinamicContent = '<h2>Pending</h2>';
 
 		
 		result.rows.forEach(element => {
-			console.log(element);
-			dinamicContent += '<p>request from '+element.username+' <button>accept</button></p>'; 
+			console.log(element.username+"negrooroo");
+			dinamicContent += '<div id='+element.username+' onclick="acceptFriend()"><p class="friend-entry">request from '+element.username+'</p><button>accept</button></div>'; 
 		});
 		res.status(201).send({
 			status : "success",
@@ -270,7 +311,7 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 		console.log(error);
 		res.status(201).send({
 			status : "internal error"
-		})
+		});
 	}
 });
 
@@ -383,7 +424,11 @@ app.post('/api/login', async (req, res) => {
 		if (!isPasswordValid) {
 			return res.status(401).send({status : "wrong credentials"});
 		}
-		
+		//checko se l'utente e' verificato
+		if (!user.verified){
+			return res.status(401).send({status : "User not verified, check your email"});
+		}
+
 		// Se le credenziali sono valide, autentica l'utente
 		let sessionid = utils.generateRandomString(32);
 		await client.query('UPDATE Users SET session_id = $1 WHERE username = $2', [sessionid, username]);
@@ -467,7 +512,7 @@ app.post('/api/convs/:id/search', async (req,res) => {
 					{status : "error",
 					content : 
 					'<div class="sidebar-entry>"\
-						<p>No chat containing '+convName+' </p>\
+						<p>sNo chat containing '+convName+' </p>\
 					</div>'
 					
 				});
@@ -503,17 +548,53 @@ app.post('/api/convs/:id/search', async (req,res) => {
 	}
 });
 
-app.post('/api/forgot', async (req,res) => {
-	const { username, password} = req.body;
-	let user = await getUser(username);
-	if (!user) {
+app.post('/api/reset', async (req,res) => {
+	const {password,verify_token} = req.body;
+	
+	if (!password) {
 		return res.status(401).send({
-			status : "User "+username+" does not exist"
+			status : "password "+password+" not valid"
+		});
+	}
+
+	try {
+		const user = await client.query('SELECT * FROM Users WHERE verify_token = $1', [verify_token]);
+		if(user.rows.length === 0){
+			res.status(401).send({status : "session_id not found"});
+		}
+		// Hash della password
+		const hashedPassword = createHash('sha256').update(password).digest('hex');
+		console.log(password,hashedPassword);
+		//aggiorno la password
+		await client.query('UPDATE Users SET password = $1 WHERE verify_token = $2', [hashedPassword, verify_token]);
+		res.status(200).send({status : "success"});
+	
+	} catch (error) {
+		console.error('Errore durante il reset password:', error);
+		res.status(500).send({status : "internal error"});
+	}
+});
+
+app.post('/api/forgot', async (req,res) => {
+	const { email} = req.body;
+	console.log(email);
+	if (!email) {
+		return res.status(401).send({
+			status : "email "+email+" does not exist"
 		});
 	}
 	try {
-		const hashedPassword = createHash('sha256').update(password).digest('hex');
-		await client.query('UPDATE Users SET password = $1 WHERE username = $2', [hashedPassword, username]);
+		//cerco l'email
+		const user = await client.query('SELECT * FROM Users WHERE email = $1', [email]);
+		if(user.rows.length === 0){
+			res.status(401).send({status : "Email not found"});
+		}
+		//creo un link che li redirecta a reset_psw.html autehticando l'utente
+		const link = 'http://192.168.1.38:8000/reset_psw.html?token='+user.rows[0].verify_token;
+
+		//invio email
+		sendEmail(email, 'Reset your password', 'Hi Mr. ' + user.rows[0].username + 'to reset your password click on the link: '+ link);
+	
 		res.status(200).send({status : "success"});
 	} catch (error) {
 		console.error('Errore durante il reset password:', error);
@@ -524,6 +605,7 @@ app.post('/api/forgot', async (req,res) => {
 app.post('/api/signup', async (req, res) => {
 	
 	const { username, password , email} = req.body;
+	console.log(email);
 	let user = await getUser(username);
 	console.log(user);
 
@@ -533,47 +615,66 @@ app.post('/api/signup', async (req, res) => {
 
 	try {
 
-		//genera link per verificare l'email
-		const verify_token = utils.generateRandomString(16);
-		const link = 'http://192.168.1.38:8000/verify?token='+verify_token;
-
-		//invia email di verifica
-		sendEmail(email, 'Verify your email', 'Hi Mr. ' + username + '. The man who sent this e-mail is very Gay\nClick on the link to verify your email: '+ link);
 
 		let clicked = false;
 		//crea un handler per il link
-		app.get('/verify', (req,res) => {
-			const token = req.query.token;
-			//verifica il token
-			if (token != verify_token){
-				res.status(401).send({status : "Invalid token"});
-			}
-			clicked = true;
-			res.status(200).send({status : "success"});
-		});
 
-		while(!clicked){
-			
-		}
 		//finche' non e' cliccato il link non continuare
 		
-
 		
 		// Hash della password
 		const hashedPassword = createHash('sha256').update(password).digest('hex');
 		console.log(password,hashedPassword)
 		// Inserisci il nuovo utente nel database
 		await client.query(
-			'INSERT INTO Users (username, password) VALUES ($1,$2)',
-			[username,hashedPassword]
+			'INSERT INTO Users (username, password, email) VALUES ($1,$2,$3)',
+			[username,hashedPassword,email]
 		);
 			
 		res.status(200).send({status : "success"});
-		
+
+		//generate default sessid
+		const default_sessid = await generateUniqueID();
+		const verify_token = await generateUniqueID();
+		//aggiungi il sessid
+		await client.query('UPDATE Users SET session_id = $1 WHERE username = $2', [default_sessid, username]);
+		await client.query('UPDATE Users SET verify_token = $1 WHERE username = $2', [verify_token, username]);
+		//const verify_token = await client.query('SELECT session_id FROM Users WHERE username = $1', [username]);
+
+		const link = 'http://192.168.1.38:8000/verify?token='+default_sessid;
+				//verify_token = session_id
+
+
+		//invia email di verifica
+		sendEmail(email, 'Verify your email', 'Hi Mr. ' + username + '. The man who sent this e-mail is very Gay\nClick on the link to verify your email: '+ link);
+
 	} catch (error) {
 		console.error('Errore durante la registrazione:', error);
 		res.status(500).send({status : "internal error"});
 	}	
+});
+
+
+app.get('/verify', async (req,res) => {
+	const token = req.query.token;
+	console.log(token);
+	//verifica se in Users c'e' un sessid = token
+	
+	//prendi utente con sessid = token
+	const user = await getUserBySessID(token);
+	//se sessid esiste
+	if (user.session_id){
+		//set VERIFIED to true
+		const result = await client.query('UPDATE Users SET verified = true WHERE session_id = $1', [token]);
+		console.log(result);
+		if (result){
+			res.status(200).send({status : "success"});
+		}
+
+	}
+	else{
+		res.status(401).send({status : "error"});
+	}
 });
 
 app.get('/login', (req,res) => {
@@ -594,7 +695,7 @@ app.get('/easter_egg', (req,res) => {
 
 app.get('/home', (req,res) => {
 	//se la richiesta arriva da /api/auth/sessid  o /login accetta, altrimenti redirecta in no_auth
-	if (req.headers.referer === 'http://localhost:8000/api/auth/sessid'){
+	if (req.headers.referer === 'http://192.168.1.38:8000/api/auth/sessid'){
 		res.sendFile(path.join(__dirname, 'public/home.html'));
 	}
 	else if (req.headers.referer === 'http://192.168.1.38:8000/login'){

@@ -58,7 +58,7 @@ function registerMessage(){
     
 }
 function showConvs(){
-    let id = localStorage.getItem('sessid');
+    let id = sessionStorage.getItem('sessid');
     let sidebar = document.getElementById('sidebar');
 
     const options = {
@@ -88,7 +88,8 @@ function showConvs(){
 //BISOGNA USARE SESSION PER l id della sessione e localStorage per il remember-me
 
 function logout() {
-    //tutto sminchiato 
+    //chiedi al backend di generare un nuovo sessid
+    
     sessionStorage.removeItem('sessid');
     sessionStorage.removeItem('remember_me');
     window.location.href = '/login';
@@ -135,23 +136,22 @@ function searchConv() {
 //     //mando una post
 // }
 
-function getFriends(){
-    let id = localStorage.getItem('sessid');
-
+async function getFriends(){
+    let id = sessionStorage.getItem('sessid');
     const options = {
         method: 'GET',
         headers: {
         'Content-Type': 'application/json'
-        },
+        }
     };
-    fetch('http://'+IP+':8000/api/friends/'+id, options)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
+    try {
+        const response = await fetch('http://' + IP + ':8000/api/friends/' + id, options);
+        const data = await response.json();
         return data;
-    })
-    .catch(error => console.error('Error:', error));
-    return;
+    } catch (error) {
+        console.error('Error:', error);
+        return null;  // or you can return an empty array or object depending on your needs
+    }
 }
 
 function showChat(name){
@@ -322,6 +322,21 @@ function assignEventListeners() {
             console.log("friends clicked");
             newFriend();
         });
+    function acceptFriendListeners(){
+        document.getElementById("friends-wrapper").addEventListener("click", function(event) {
+            // Verifica se l'elemento cliccato è quello desiderato (ad esempio, un elemento con la classe "friend-entry")
+            if (event.target && event.target.classList.contains("friend-entry")) {
+                // Ottieni l'id dell'elemento cliccato (supponendo che l'id sia l'username)
+                var clickedId = event.target.id;
+                
+                // Fai qualcosa con l'id cliccato
+                console.log("Clicked element id:", clickedId);
+                
+                // Chiamata alla tua funzione acceptFriend()
+                acceptFriend(clickedId);
+            }
+        });
+    }
     }
 }
 
@@ -351,32 +366,62 @@ async function getPendingRequests(){
 async function refreshFriends(){
     console.log('golem negro');
     let pendingData = await getPendingRequests();
-    // let friendData = getFriends();
+    let friendData = await getFriends();
+    console.log(friendData);
     console.log(pendingData);
+
     if(!pendingData) return;
-    // if(!friendData) return;
+    if(!friendData) return;
     const pendingDiv = document.getElementById("pending");
     const activeDiv = document.getElementById("active-friends");
 
-    // if(friendData.status === 'success'){
-    //     activeDiv.innerHTML = friendData.content;
-    // }else{
-    //     activeDiv.innerHTML = "error fetching friends";
-    // }
+    if(friendData.status === 'success'){
+        activeDiv.innerHTML = friendData.content;
+    }else{
+        activeDiv.innerHTML = "error fetching friends";
+    }
 
     if(pendingData.status === 'success'){
         pendingDiv.innerHTML = pendingData.content;
     }else{
-        pendingDiv.innerHTML = "error fetching friends";
+        pendingDiv.innerHTML = "error fetching requests";
     }
 }
+function acceptFriend(friend_id){
+    let id = sessionStorage.getItem('sessid');
+    let status_label = document.getElementById('res-friend');
+    const data = { 
+        friend_id : friend_id
+    };     
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    };
+    fetch('http://'+IP+':8000/api/friends/'+id+'/accept', options)
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        if(data.status === 'success'){
+            //got conversations
+            status_label.innerText = data.content;
+        }
+        else{
+            //error in the backend
+            status_label.innerText = data.status;
+        }
+    }); 
+}
+
 
 function newFriend(){
     let id = sessionStorage.getItem('sessid');
-    const friendname = document.getElementById("friend-name").value;
     let status_label = document.getElementById('res-friend');
+    const friendname = document.getElementById('friend-name');
     const data = { 
-        friendname
+        name : friendname.value
     };     
     const options = {
         method: 'POST',
@@ -391,7 +436,7 @@ function newFriend(){
         console.log(data);
         if(data.status === 'success'){
             //got conversations
-            status_label.innerText = "Sent friend request to "+ friendname;
+            status_label.innerText = data.content;
         }
         else{
             //error in the backend
@@ -425,8 +470,8 @@ function newFriend(){
 
 //TODO login.html
 
-    //implementare forgot-password e remember me (implementare mail)
-    //aggiorna tabella con mail
+    //implementare forgot-password e remember me (implementare mail) FATTO (da Jacopo project manager)
+    //aggiorna tabella con mail                                      FATTO (da Jacopo project manager)
     //
 
 //TODO index.html    <------- nicolò

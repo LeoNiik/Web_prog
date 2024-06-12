@@ -1,0 +1,32 @@
+<!-- a page to handle forgot password -->
+
+<!DOCTYPE html>
+<html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Forgot Password!</title>
+        <link rel="stylesheet" href="style.css">
+        <script src="prova.js"></script>
+        <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel="stylesheet">
+    
+    </head>
+
+<body class="forgot">
+    <div class="wrapper">
+        <h1>Forgot Password</h1>
+
+        <div class="input-box">
+            <input type="text" placeholder="Insert New password" id="password"></input>
+            <i class='bx bxs-user'></i>
+        </div>
+
+        <button class="btn" id="login-btn" onclick="reset_pswdHandler()">Submit</button>
+        <div class="err-text">
+            <label id="err-text"></label>
+        </div>
+
+    </div>
+
+
+</html>

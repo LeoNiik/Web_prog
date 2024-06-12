@@ -3,6 +3,7 @@ const IP ='192.168.1.38';
 
 document.addEventListener("DOMContentLoaded", function() {
 
+    authSessid();
     document.addEventListener("keypress", function(event) {
         // If the user presses the "Enter" key on the keyboard
         if (event.key === "Enter") {
@@ -46,12 +47,10 @@ function authSessid(){
     }
 }
 function forgotHandler() {
-    username = document.getElementById('username').value
-    password = document.getElementById('password').value
+    email = document.getElementById('email').value
 
     const data = {
-        username,
-        password
+        email
     };
     const options = {
       method: 'POST',
@@ -127,6 +126,54 @@ function loginHandler() {
     });
 }
 
+function reset_pswdHandler() {
+
+    let password = document.getElementById('password').value;
+    let btn = document.getElementById('login-btn');
+    btn.innerText = '. . .';
+    btn.className = 'loading-btn';
+    let err = document.getElementById('err-text');
+    //add user input check
+
+    //retrieva il token dall'url
+    let verify_token = new URLSearchParams(window.location.search);
+    verify_token = verify_token.get('token');
+    console.log(verify_token);
+    const data = {
+        password,
+        verify_token
+    };
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    };
+
+    fetch('http://'+IP+':8000/api/reset', options)
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+        if(data.status === 'success'){
+            //sign up succesful
+            window.location.href = '/login';
+        }else{
+            //sign up failed
+            btn.innerText = 'Sign up';
+            btn.className = 'btn';
+            err.innerText= data.status;
+        }
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+
+
+
+
+}
+
 function getRequestWithTimeout(url) {
     return new Promise((resolve, reject) => {
         // Set a timeout to delay the fetch request
@@ -159,7 +206,7 @@ function signupHandler() {
     btn.className = 'loading-btn';
     let err = document.getElementById('err-text');
     //add user input check
-
+    
 
     if(password != conf_password){
         err.innerText = 'le password non coincidono'
@@ -172,6 +219,7 @@ function signupHandler() {
         password,
         email
     };
+    console.log(data)
     const options = {
       method: 'POST',
       headers: {
