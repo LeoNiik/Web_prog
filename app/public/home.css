@@ -408,15 +408,25 @@ body {
 	background: transparent;
 	margin: 30px 0;
 }
-#pending .friend-entry button {
-
-	background: white;
-	border: none;
-	outline: none;
-	border-radius: 40px;
-	box-shadow: 0 0 10px rgba(0,0,0,.1);
-	cursor: pointer;
-	font-size: 28px;
-	color: #333;
-	font-weight: 600;
+#pending button {
+    background-color: #25d366;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#pending button:hover {
+    background-color: #1da955;
+}
+#active-friends button {
+    background-color: #b21d1d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#active-friends button:hover {
+    background-color: #8c1a1a;
 }

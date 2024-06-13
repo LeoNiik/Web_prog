@@ -231,6 +231,33 @@ app.post('/api/friends/:id/accept', async (req, res) => {
 	}
 });
 
+app.post('/api/friends/:id/remove', async (req, res) => {
+	
+	// Handle login logic here
+	const id = req.params.id;
+	const friend_id = req.body.friend_id;
+	
+	//update la table sostituendo pending con accepted
+	try {
+		let user = await getUserBySessID(id);
+		if (!user) {
+			return res.status(401).send({
+				status : "Error getting current user"
+			});
+		}
+		await client.query('DELETE FROM friends WHERE user_id = $1 AND friend_id = $2', [user.id, friend_id]);
+		await client.query('DELETE FROM friends WHERE friend_id = $1 AND user_id = $2', [user.id, friend_id]);
+		
+		res.status(200).send({
+			status : "success",
+			content : "Friend removed"
+		});
+	} catch (error) {
+		console.error('Errore durante remove friends:', error);
+		res.status(500).send({status : "internal error"});
+	}
+});
+
 app.get("/api/friends/:id", async (req, res) => {
 	try {
 		const sessid = req.params.id;
@@ -245,7 +272,7 @@ app.get("/api/friends/:id", async (req, res) => {
 		let dinamicContent = '<h2>Friends</h2>';
 		
 		let result = await client.query(
-			"SELECT username FROM users JOIN (SELECT friend_id,status FROM friends JOIN users ON user_id=id WHERE id=$1 and status='accepted') on id=friend_id;", [user.id]);
+			"SELECT username,id FROM users JOIN (SELECT friend_id,status FROM friends JOIN users ON user_id=id WHERE id=$1 and status='accepted') on id=friend_id;", [user.id]);
 		if (result.rows.length === 0) {
 			dinamicContent += '<p>No friends</p>'
 			res.status(201).send({
@@ -259,7 +286,8 @@ app.get("/api/friends/:id", async (req, res) => {
 		result.rows.forEach(element => {
 			
 			console.log(element.username);
-			dinamicContent += ''; 
+			dinamicContent += '<div class="friend-entry"><p>'+element.username+'</p>\
+			<button id='+element.id+' class="rmfriend-btn">remove</button></div>'; 
 			
 		});
 		res.status(201).send({
@@ -286,7 +314,7 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 		
 		let dinamicContent = '<h2>Pending</h2>';
 		let result = await client.query(
-			"SELECT username FROM users JOIN (SELECT user_id,status FROM friends JOIN users ON user_id=id WHERE friend_id=$1 and status='pending') on id=user_id;", [user.id]);
+			"SELECT username,id FROM users JOIN (SELECT user_id FROM friends JOIN users ON user_id=id WHERE friend_id=$1 and status='pending') on id=user_id;", [user.id]);
 		if (result.rows.length === 0) {
 			dinamicContent += 'No pendings requests';
 			res.status(201).send({
@@ -301,8 +329,7 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 
 		
 		result.rows.forEach(element => {
-			console.log(element.username+"negrooroo");
-			dinamicContent += '<div id='+element.username+'><p class="friend-entry">request from '+element.username+'</p><button>accept</button></div>'; 
+			dinamicContent += '<div class="friend-entry"><p>request from '+element.username+'</p><button id='+element.id+' class="acc-btn">accept</button></div>'; 
 		});
 		res.status(201).send({
 			status : "success",

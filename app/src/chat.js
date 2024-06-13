@@ -324,22 +324,55 @@ function assignEventListeners() {
             newFriend();
         });
     }
-    function acceptFriendListeners(){
-        const container = document.getElementById("friends-wrapper")
-        container.addEventListener("click", function(event) {
-            // Verifica se l'elemento cliccato è quello desiderato (ad esempio, un elemento con la classe "friend-entry")
-            if (event.target && event.target.classList.contains("friend-entry")) {
-                // Ottieni l'id dell'elemento cliccato (supponendo che l'id sia l'username)
-                var clickedId = event.target.id;
-                
-                // Fai qualcosa con l'id cliccato
-                console.log("Clicked element id:", clickedId);
-                
-                // Chiamata alla tua funzione acceptFriend()
-                acceptFriend(clickedId);
-            }
+}
+function acceptFriendListeners(){
+    const buttons = document.querySelectorAll(".acc-btn");
+    console.log(buttons);
+    buttons.forEach((button)=>{
+        button.addEventListener('click', (event)=>{
+            const friendname = event.target.id;
+            acceptFriend(friendname);
         });
-    }
+    });
+}
+function removeFriendsListeners(){
+    const buttons = document.querySelectorAll(".rmfriend-btn");
+    console.log(buttons);
+    buttons.forEach((button)=>{
+        button.addEventListener('click', (event)=>{
+        
+            const friend_id = event.target.id;
+            console.log(event.target);
+            removeFriend(friend_id);
+        });
+    });
+}
+function removeFriend(friend_id) {
+    let id = sessionStorage.getItem('sessid');
+    let status_label = document.getElementById('res-friend');
+    const data = { 
+        friend_id : friend_id
+    };     
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    };
+    fetch('http://'+IP+':8000/api/friends/'+id+'/remove', options)
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        if(data.status === 'success'){
+            //got conversations
+            refreshFriends();
+        }
+        else{
+            //error in the backend
+            status_label.innerText = data.status;
+        }
+    }); 
 }
 
 function closeDropdown(){
@@ -388,6 +421,8 @@ async function refreshFriends(){
     }else{
         pendingDiv.innerHTML = "error fetching requests";
     }
+    removeFriendsListeners();
+    acceptFriendListeners();
 }
 function acceptFriend(friend_id){
     let id = sessionStorage.getItem('sessid');
