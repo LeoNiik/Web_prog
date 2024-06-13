@@ -408,7 +408,7 @@ body {
 	background: transparent;
 	margin: 30px 0;
 }
-#pending button {
+#pending .acc-btn {
     background-color: #25d366;
     color: white;
     border: none;
@@ -416,7 +416,7 @@ body {
     border-radius: 5px;
     cursor: pointer;
 }
-#pending button:hover {
+#pending .acc-btn:hover {
     background-color: #1da955;
 }
 #active-friends button {
@@ -430,3 +430,38 @@ body {
 #active-friends button:hover {
     background-color: #8c1a1a;
 }
+#active-friends .ref-btn {
+    background-color: #b21d1d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#active-friends .ref-btn:hover {
+    background-color: #8c1a1a;
+}
+
+.friends-wrapper {
+    background-color: #075e54;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.write-to-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+.write-to-entry:hover {
+    background-color: #f1f1f1;
+    
+}
+

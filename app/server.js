@@ -207,8 +207,8 @@ app.post('/api/friends/:id/accept', async (req, res) => {
 	
 	// Handle login logic here
 	const id = req.params.id;
-	const friend_id = req.body.friend_id;
-	
+	const {friend_id,accept}= req.body;
+	console.log(friend_id,accept);
 	//update la table sostituendo pending con accepted
 	try {
 		let user = await getUserBySessID(id);
@@ -217,15 +217,19 @@ app.post('/api/friends/:id/accept', async (req, res) => {
 				status : "Error getting current user"
 			});
 		}
-		await client.query('UPDATE friends SET status = $1 WHERE user_id = $2 AND friend_id = $3', ['accepted', user.id, friend_id]);
-		await client.query('UPDATE friends SET status = $1 WHERE friend_id = $2 AND user_id = $3', ['accepted', user.id, friend_id]);
+		if(accept){
+			await client.query('UPDATE friends SET status = $1 WHERE user_id = $2 AND friend_id = $3', ['accepted', user.id, friend_id]);
+			await client.query('UPDATE friends SET status = $1 WHERE friend_id = $2 AND user_id = $3', ['accepted', user.id, friend_id]);
+		}else{
+			await client.query('DELETE from friends WHERE user_id=$1 and friend_id=$2 and status=$3',[friend_id,user.id,'pending'])
+		}
 		
 		res.status(200).send({
 			status : "success",
 			content : "Friend request accepted"
 		});
 	} catch (error) {
-		console.error('Errore durante adding friends:', error);
+		console.error('Errore durante accepting friends:', error);
 		res.status(500).send({status : "internal error"});
 	}
 });
@@ -244,8 +248,8 @@ app.post('/api/friends/:id/remove', async (req, res) => {
 				status : "Error getting current user"
 			});
 		}
-		await client.query('DELETE FROM friends WHERE user_id = $1 AND friend_id = $2', [user.id, friend_id]);
-		await client.query('DELETE FROM friends WHERE friend_id = $1 AND user_id = $2', [user.id, friend_id]);
+		await client.query('DELETE FROM friends WHERE user_id = $1 AND friend_id = $2 AND status=$3', [user.id, friend_id,'accepted']);
+		await client.query('DELETE FROM friends WHERE friend_id = $1 AND user_id = $2 AND status=$3', [user.id, friend_id,'accepted']);
 		
 		res.status(200).send({
 			status : "success",
@@ -256,6 +260,7 @@ app.post('/api/friends/:id/remove', async (req, res) => {
 		res.status(500).send({status : "internal error"});
 	}
 });
+
 
 app.get("/api/friends/:id", async (req, res) => {
 	try {
@@ -269,29 +274,80 @@ app.get("/api/friends/:id", async (req, res) => {
 			});
 		}
 		let dinamicContent = '<h2>Friends</h2>';
+		let writeToContent = '<h2>Write to</h2>'
 		
 		let result = await client.query(
 			"SELECT username,id FROM users JOIN (SELECT friend_id,status FROM friends JOIN users ON user_id=id WHERE id=$1 and status='accepted') on id=friend_id;", [user.id]);
 		if (result.rows.length === 0) {
 			dinamicContent += '<p>No friends</p>'
+			writeToContent += '<p>No friends, add new friends in the three dots near the search bar</p>'
 			res.status(201).send({
 				status : "success",
-				content : dinamicContent  
+				content : dinamicContent,
+				writeTo : writeToContent 
 			});
 			return;
 		}
 		
 		//return the conversation as HTML
 		result.rows.forEach(element => {
-			
+
 			console.log(element.username);
 			dinamicContent += '<div class="friend-entry"><p>'+element.username+'</p>\
 			<button id='+element.id+' class="rmfriend-btn">remove</button></div>'; 
-			
+			// un div per ogni amico con un bottone remove
+			writeToContent +=  '<div class="write-to-entry" id="'+element.id+'">\
+			<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+			<div class="chat-info">\
+				<span class="chat-name">'+element.username+'</span>\
+			</div>\
+			<div class="notification-info">\
+				<span class="time">time</span>\
+				<span class="notifications">3</span>\
+			</div>\
+			</div>';
+	
+		});
+
+		// '<div class="sidebar-entry" id="'+conversation_id+'">\
+		// <img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+		// <div class="chat-info">\
+		// 	<span class="chat-name">'+name+'</span>\
+		// </div>\
+		// <div class="notification-info">\
+		// 	<span class="time">'+time+'</span>\
+		// 	<span class="notifications">3</span>\
+		// </div>\
+		// </div>'
+		//retrievo il conversation_id
+		let conversation_ids = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1', [user.id]);
+		//prendo il nome dell' amico con cui ha la conversazione
+		let partecipants_id = await client.query('SELECT user_id FROM Conversation_Participants WHERE conversation_id = $1', [conversation_ids.rows[0].conversation_id]);
+		console.log(partecipants_id);
+		//prendo l'id dentro partecipants_id che non e' uguale a user.id
+		let friend_id = partecipants_id.rows[0].user_id === user.id ? partecipants_id.rows[1].user_id : partecipants_id.rows[0].user_id;
+		let friend_name = await client.query('SELECT username FROM Users WHERE id = $1', [friend_id]);
+
+		friend_name = friend_name.rows[0].username;
+		let convs = '<h2>Conversations</h2>';
+		conversation_ids.rows.forEach(element => {
+			convs += '\
+			<div class="sidebar-entry" id="'+element.conversation_id+'">\
+				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+				<div class="chat-info">\
+					<span class="chat-name">'+ friend_name + '</span>\
+				</div>\
+				<div class="notification-info">\
+					<span class="time">time</span>\
+					<span class="notifications">3</span>\
+				</div>\;\
+			</div>'
 		});
 		res.status(201).send({
 			status : "success",
-			content : dinamicContent
+			content : dinamicContent,
+			convs : convs,
+			writeTo : writeToContent
 		});
 		
 	} catch (error) {
@@ -328,7 +384,7 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 
 		
 		result.rows.forEach(element => {
-			dinamicContent += '<div class="friend-entry"><p>request from '+element.username+'</p><button id='+element.id+' class="acc-btn">accept</button></div>'; 
+			dinamicContent += '<div class="friend-entry"><p>request from '+element.username+'</p><button id='+element.id+' class="acc-btn">accept</button><button id='+element.id+' class="ref-btn">refuse</button></div>'; 
 		});
 		res.status(201).send({
 			status : "success",
@@ -518,6 +574,41 @@ app.post('/api/auth/sessid', async (req,res) => {
 		//res.sendFile(path.join(__dirname, 'public/home.html'));
 	} catch (error) {
 		console.log('Error during auth query')
+	}
+
+});
+
+app.post('/api/convs/:id/create', async (req,res) => {
+	const sessid = req.params.id;
+	const friend_id = req.body.friend_id;
+	let user = await getUserBySessID(sessid);
+		
+	if (!user) {
+		return res.status(401).send({
+			status : "Error getting current user"
+		});
+	}
+	try {
+		//creo una conversazione senza inserire niente e ritorno l'id
+		let conv_id = await client.query('INSERT INTO Conversations DEFAULT VALUES RETURNING id');
+		if(conv_id.rows.length === 0){
+			res.status(401).send({status : "error",
+				content : "failed to create conversation"
+			});
+		}
+		//checko se esite gia' una conversazione con lo stesso friend_id
+		const check = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1 INTERSECT SELECT conversation_id FROM Conversation_Participants WHERE user_id = $2', [user.id, friend_id]);
+		if(check.rows.length != 0){
+			res.status(401).send({status : "error",
+				content : "conversation already exists"
+			});
+		}
+		//inserico 2 entry a Conversation Partecipants con id e friend_id
+		await client.query('INSERT INTO Conversation_Participants (conversation_id, user_id) VALUES ($1, $2)', [conv_id.rows[0].id, user.id]);
+		await client.query('INSERT INTO Conversation_Participants (conversation_id, user_id) VALUES ($1, $2)', [conv_id.rows[0].id, friend_id]);
+		res.status(200).send({status : "success"});
+	} catch (error) {
+		console.log('Error during conversation creation', error);
 	}
 
 });
@@ -749,7 +840,6 @@ app.listen(PORT, HOST);
 // DROP TABLE IF EXISTS Conversations;
 // CREATE TABLE Conversations (
 //     id SERIAL PRIMARY KEY,
-//     name VARCHAR(255),
 //     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 //     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 // );

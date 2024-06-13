@@ -1,6 +1,6 @@
-document.addEventListener('DOMContentLoaded', (event) => {
-    showConvs();
+document.addEventListener('DOMContentLoaded', async (event) => {
     assignEventListeners();
+    await showConvs();
     // Apri il popup modale
 ///poroceopces//////
 }); 
@@ -57,34 +57,16 @@ function registerMessage(){
     })
     
 }
-function showConvs(){
-    let id = sessionStorage.getItem('sessid');
-    let sidebar = document.getElementById('sidebar');
-
-    const options = {
-        method: 'GET',
-        headers: {
-        'Content-Type': 'application/json'
-        },
-    };
-    fetch('http://'+IP+':8000/api/convs/'+id, options)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        if(data.status === 'success'){
-            //got conversations
-            sidebar.innerHTML += data.content;
-            assignEventListeners();
-        }
-        else{
-            //error in the backend
-            //sidebar.innerHTML += "clicca per riprovare"
-        }
-    })
-    .catch(error => console.error('Error:', error));
-    return;
+async function showConvs(){
+    const data = await getFriends();
+    let sidebar = document.getElementById('entries-wrapper');
+    console.log(data);
+    if(data.status === 'success'){
+        //got conversations
+        sidebar.innerHTML = data.convs;
+    }
+        //aggiundo data.convs a entries-wrapper di home.html}
 }
-
 //BISOGNA USARE SESSION PER l id della sessione e localStorage per il remember-me
 
 function logout() {
@@ -153,7 +135,31 @@ async function getFriends(){
         return null;  // or you can return an empty array or object depending on your needs
     }
 }
-
+async function newChat(friend_id){
+    const convName = document.getElementById('chat-name').value;
+    //prendo l id dell amico
+    let id = sessionStorage.getItem('sessid');
+    const data = { 
+        convName,
+        friend_id
+    };     
+    const options = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        };
+    console.log("new chat");
+    fetch('http://'+IP+':8000/api/convs/'+id+'/create', options)
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        if(data.status === 'success'){
+            console.log('Chat creata');
+        }
+    }); 
+}
 function showChat(name){
     let id = sessionStorage.getItem('sessid');
     const data = { 
@@ -188,13 +194,15 @@ function showChat(name){
 function assignEventListeners() {
     newChatListeners();
     messageListeners();
+    manageFriendsListeners();
     moreOptionsListeners();
     newFriendsListeners();
     searchConvListeners();
     friendModalListeners();
     logoutListeners();
-    manageFriendsListeners();
-    acceptFriendListeners();
+
+
+    
     function newChatListeners(){
         const modal = document.getElementById('popup-newchat');
         const newChatButton = document.getElementById('new-chat');
@@ -202,6 +210,7 @@ function assignEventListeners() {
         newChatButton.addEventListener('click', function () {
             // Azione da eseguire quando si clicca sull'icona
             console.log('Nuova chat cliccata!');    
+            refreshFriends();
             // Puoi anche aprire il modal per creare una nuova chat, per esempio
             const modal = document.getElementById('popup-newchat');
             modal.style.display = 'block';
@@ -221,6 +230,7 @@ function assignEventListeners() {
                 modal.style.display = 'none';
             }
         });
+
     }
     function messageListeners() {
         const messageInput = document.getElementById('new-message');
@@ -234,23 +244,7 @@ function assignEventListeners() {
         
         });
     }
-    function moreOptionsListeners() {
-        const dropdownButton = document.getElementById('drop-btn');
-        const dropdown = document.getElementById('dropdown');
-    
-        dropdownButton.addEventListener('click', (event) => {
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-            event.stopPropagation(); // Prevent the event from bubbling up
-        });
-    
-        window.addEventListener('click', function () {
-            dropdown.style.display = 'none';
-        });
-    
-        dropdown.addEventListener('click', function(event) {
-            event.stopPropagation(); // Prevent the event from bubbling up
-        }); 
-    }
+
     function newFriendsListeners() {
         const modal = document.getElementById('popup-newfriend');
         const newFriendButton = document.getElementById('new-friend');
@@ -325,19 +319,55 @@ function assignEventListeners() {
         });
     }
 }
+function moreOptionsListeners() {
+    const dropdownButton = document.getElementById('drop-btn');
+    const dropdown = document.getElementById('dropdown');
+
+    dropdownButton.addEventListener('click', (event) => {
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        event.stopPropagation(); // Prevent the event from bubbling up
+    });
+
+    window.addEventListener('click', function () {
+        dropdown.style.display = 'none';
+    });
+
+    // dropdown.addEventListener('click', function(event) {
+    //     event.stopPropagation(); // Prevent the event from bubbling up
+    // }); 
+}
 function acceptFriendListeners(){
     const buttons = document.querySelectorAll(".acc-btn");
-    console.log(buttons);
+    buttons.forEach((button)=>{
+        button.addEventListener('click', (event)=>{
+            const friend_id = event.target.id;
+            acceptFriend(friend_id,true);
+        });
+    
+    });
+}
+function writeToListeners(){
+    const entries = document.querySelectorAll(".write-to-entry");
+    console.log(entries);
+    entries.forEach((button)=>{
+        button.addEventListener('click', (event)=>{
+            const friend_id = event.target.id;
+            newChat(friend_id);
+        });
+    });
+}
+function refuseFriendListeners(){
+    const buttons = document.querySelectorAll(".ref-btn");
     buttons.forEach((button)=>{
         button.addEventListener('click', (event)=>{
             const friendname = event.target.id;
-            acceptFriend(friendname);
+            acceptFriend(friendname,false);
         });
+    
     });
 }
 function removeFriendsListeners(){
     const buttons = document.querySelectorAll(".rmfriend-btn");
-    console.log(buttons);
     buttons.forEach((button)=>{
         button.addEventListener('click', (event)=>{
         
@@ -402,6 +432,7 @@ async function refreshFriends(){
     console.log('golem negro');
     let pendingData = await getPendingRequests();
     let friendData = await getFriends();
+    let friendDiv = document.getElementById('friends-wrapper'); 
     console.log(friendData);
     console.log(pendingData);
 
@@ -412,10 +443,12 @@ async function refreshFriends(){
 
     if(friendData.status === 'success'){
         activeDiv.innerHTML = friendData.content;
+        friendDiv.innerHTML = friendData.writeTo;
     }else{
         activeDiv.innerHTML = "error fetching friends";
+        friendDiv.innerHTML = 'error';
     }
-
+    
     if(pendingData.status === 'success'){
         pendingDiv.innerHTML = pendingData.content;
     }else{
@@ -423,12 +456,15 @@ async function refreshFriends(){
     }
     removeFriendsListeners();
     acceptFriendListeners();
+    refuseFriendListeners();
+    writeToListeners();
 }
-function acceptFriend(friend_id){
+function acceptFriend(friend_id, accepted){
     let id = sessionStorage.getItem('sessid');
     let status_label = document.getElementById('res-friend');
     const data = { 
-        friend_id : friend_id
+        friend_id : friend_id,
+        accept : accepted
     };     
     const options = {
         method: 'POST',
@@ -444,6 +480,7 @@ function acceptFriend(friend_id){
         if(data.status === 'success'){
             //got conversations
             status_label.innerText = data.content;
+            refreshFriends();
         }
         else{
             //error in the backend
