@@ -1,7 +1,6 @@
 'use strict';
 const path = require('path');
 const express = require('express');
-const axios = require('axios');
 const { Client } = require('pg');
 var bodyParser = require('body-parser')
 const { createHash } = require('crypto');
