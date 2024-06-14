@@ -17,3 +17,6 @@ execsrv:
 
 execdb:
 	sudo docker exec -it web_prog-app-db-1 bash
+clean:
+	make down
+	sudo docker volume rm db-default

@@ -39,7 +39,7 @@ CREATE TABLE Conversation_Participants (
 
 
 -- Create custom type for status
-CREATE TYPE friend_status AS ENUM ('pending', 'accepted', 'declined');
+CREATE TYPE friend_status AS ENUM ('pending', 'accepted', 'declined','sent');
 
 -- Drop the friends table if it exists
 DROP TABLE IF EXISTS friends;

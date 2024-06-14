@@ -15,7 +15,7 @@ const nodemailer = require('nodemailer');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-
+const IP = '192.168.1.42'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
@@ -64,7 +64,7 @@ const transporter = nodemailer.createTransport({
 	port: 465,
 	secure: true,
 	auth: {
-	  user: "francolama21@gmail.com",
+	  user: process.env.EMAIL,
 	  pass: process.env.EMAIL_PASS
 	},
   });
@@ -73,7 +73,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = (to, subject, text) => {
 	console.log(to);
 	const mailOptions = {
-	  from: 'francolama21@gmail.com',
+	  from: process.env.EMAIL,
 	  to: to,
 	  subject: subject,
 	  text: text,
@@ -190,8 +190,8 @@ app.post('/api/friends/:id', async (req, res) => {
 		//controllare se le query ritornano qualcosa 
 		
 		
-		await client.query('INSERT INTO friends (user_id, friend_id) VALUES ($1, $2)', [user.id, friend_id.rows[0].id]);
-		await client.query('INSERT INTO friends (friend_id, user_id) VALUES ($1, $2)', [user.id, friend_id.rows[0].id]);
+		await client.query('INSERT INTO friends (user_id, friend_id, status) VALUES ($1, $2, $3)', [user.id, friend_id.rows[0].id,'sent']);
+		await client.query('INSERT INTO friends (user_id, friend_id) VALUES ($1, $2)', [friend_id.rows[0].id,user.id]);
 		
 		res.status(200).send({
 			status : "success",
@@ -319,30 +319,33 @@ app.get("/api/friends/:id", async (req, res) => {
 		// 	<span class="notifications">3</span>\
 		// </div>\
 		// </div>'
-		//retrievo il conversation_id
-		let conversation_ids = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1', [user.id]);
-		//prendo il nome dell' amico con cui ha la conversazione
-		let partecipants_id = await client.query('SELECT user_id FROM Conversation_Participants WHERE conversation_id = $1', [conversation_ids.rows[0].conversation_id]);
-		console.log(partecipants_id);
-		//prendo l'id dentro partecipants_id che non e' uguale a user.id
-		let friend_id = partecipants_id.rows[0].user_id === user.id ? partecipants_id.rows[1].user_id : partecipants_id.rows[0].user_id;
-		let friend_name = await client.query('SELECT username FROM Users WHERE id = $1', [friend_id]);
 
-		friend_name = friend_name.rows[0].username;
+
+
+		//retrievo il conversation_id
+		// let conversation_ids = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1', [user.id]);
+		// //prendo il nome dell' amico con cui ha la conversazione
+		// // let partecipants_id = await client.query('SELECT user_id FROM Conversation_Participants WHERE conversation_id = $1', [conversation_ids.rows[0].conversation_id]);
+		// // console.log(partecipants_id);
+		// //prendo l'id dentro partecipants_id che non e' uguale a user.id
+		// let friend_id = partecipants_id.rows[0].user_id === user.id ? partecipants_id.rows[1].user_id : partecipants_id.rows[0].user_id;
+		// let friend_name = await client.query('SELECT username FROM Users WHERE id = $1', [friend_id]);
+		// friend_name = friend_name.rows[0].username;
+
 		let convs = '<h2>Conversations</h2>';
-		conversation_ids.rows.forEach(element => {
-			convs += '\
-			<div class="sidebar-entry" id="'+element.conversation_id+'">\
-				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
-				<div class="chat-info">\
-					<span class="chat-name">'+ friend_name + '</span>\
-				</div>\
-				<div class="notification-info">\
-					<span class="time">time</span>\
-					<span class="notifications">3</span>\
-				</div>\;\
-			</div>'
-		});
+		// conversation_ids.rows.forEach(element => {
+		// 	convs += '\
+		// 	<div class="sidebar-entry" id="'+element.conversation_id+'">\
+		// 		<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+		// 		<div class="chat-info">\
+		// 			<span class="chat-name">'+ friend_name + '</span>\
+		// 		</div>\
+		// 		<div class="notification-info">\
+		// 			<span class="time">time</span>\
+		// 			<span class="notifications">3</span>\
+		// 		</div>\;\
+		// 	</div>'
+		// });
 		res.status(201).send({
 			status : "success",
 			content : dinamicContent,
@@ -355,6 +358,7 @@ app.get("/api/friends/:id", async (req, res) => {
 	}
 });
 
+//mostra le richieste di amicizia ricevute
 app.get("/api/friends/:id/pending", async (req, res) => {
 	try {
 		const sessid = req.params.id;
@@ -368,8 +372,12 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 		}
 		
 		let dinamicContent = '<h2>Pending</h2>';
-		let result = await client.query(
-			"SELECT username,id FROM users JOIN (SELECT user_id FROM friends JOIN users ON user_id=id WHERE friend_id=$1 and status='pending') on id=user_id;", [user.id]);
+		let result = await client.query("SELECT username,id FROM users JOIN (SELECT friend_id FROM friends WHERE user_id=$1 AND status=$2) on id=friend_id;", [user.id,'pending']);
+
+
+
+		//ritorna l' elemento solo all' amico che ha ricevuot la richiesta
+		
 		if (result.rows.length === 0) {
 			dinamicContent += 'No pendings requests';
 			res.status(201).send({
@@ -709,7 +717,7 @@ app.post('/api/forgot', async (req,res) => {
 			res.status(401).send({status : "Email not found"});
 		}
 		//creo un link che li redirecta a reset_psw.html autehticando l'utente
-		const link = 'http://192.168.1.38:8000/reset_psw.html?token='+user.rows[0].verify_token;
+		const link = 'http://' + IP + ':8000/reset_psw.html?token='+user.rows[0].verify_token;
 
 		//invio email
 		sendEmail(email, 'Reset your password', 'Hi Mr. ' + user.rows[0].username + 'to reset your password click on the link: '+ link);
@@ -760,7 +768,7 @@ app.post('/api/signup', async (req, res) => {
 		await client.query('UPDATE Users SET verify_token = $1 WHERE username = $2', [verify_token, username]);
 		//const verify_token = await client.query('SELECT session_id FROM Users WHERE username = $1', [username]);
 
-		const link = 'http://192.168.1.38:8000/verify?token='+default_sessid;
+		const link = 'http://'+IP+':8000/verify?token='+default_sessid;
 				//verify_token = session_id
 
 
@@ -814,10 +822,10 @@ app.get('/easter_egg', (req,res) => {
 
 app.get('/home', (req,res) => {
 	//se la richiesta arriva da /api/auth/sessid  o /login accetta, altrimenti redirecta in no_auth
-	if (req.headers.referer === 'http://192.168.1.38:8000/api/auth/sessid'){
+	if (req.headers.referer === 'http://' + IP + ':8000/api/auth/sessid'){
 		res.sendFile(path.join(__dirname, 'public/home.html'));
 	}
-	else if (req.headers.referer === 'http://192.168.1.38:8000/login'){
+	else if (req.headers.referer === 'http://' + IP + ':8000/login'){
 		res.sendFile(path.join(__dirname, 'public/home.html'));
 	}
 	else{

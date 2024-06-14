@@ -1,11 +1,11 @@
 document.addEventListener('DOMContentLoaded', async (event) => {
     assignEventListeners();
-    await showConvs();
+    // await showConvs();
     // Apri il popup modale
 ///poroceopces//////
 }); 
 
-const IP = '192.168.1.38';
+const IP = '192.168.1.42';
 //
 
 function sendMessage() {
@@ -129,9 +129,10 @@ async function getFriends(){
     try {
         const response = await fetch('http://' + IP + ':8000/api/friends/' + id, options);
         const data = await response.json();
+        console.log(data);
         return data;
     } catch (error) {
-        console.error('Error:', error);
+        console.log('Error:', error);
         return null;  // or you can return an empty array or object depending on your needs
     }
 }
@@ -207,10 +208,10 @@ function assignEventListeners() {
         const modal = document.getElementById('popup-newchat');
         const newChatButton = document.getElementById('new-chat');
     
-        newChatButton.addEventListener('click', function () {
+        newChatButton.addEventListener('click', async function () {
             // Azione da eseguire quando si clicca sull'icona
             console.log('Nuova chat cliccata!');    
-            refreshFriends();
+            await refreshFriends();
             // Puoi anche aprire il modal per creare una nuova chat, per esempio
             const modal = document.getElementById('popup-newchat');
             modal.style.display = 'block';
@@ -274,11 +275,11 @@ function assignEventListeners() {
     function manageFriendsListeners(){
         const button = document.getElementById("manage-friend");
         const modal = document.getElementById('popup-manager');
-        button.addEventListener('click', function () {
+        button.addEventListener('click',async function () {
             closeDropdown();
             // Azione da eseguire quando si clicca sull'icona
             // Puoi anche aprire il modal per creare una nuova chat, per esempio
-            refreshFriends();
+            await refreshFriends();
             modal.style.display = 'block';
         });
         // Chiudi il modal quando si clicca sulla 'x'
@@ -339,9 +340,9 @@ function moreOptionsListeners() {
 function acceptFriendListeners(){
     const buttons = document.querySelectorAll(".acc-btn");
     buttons.forEach((button)=>{
-        button.addEventListener('click', (event)=>{
+        button.addEventListener('click', async (event)=>{
             const friend_id = event.target.id;
-            acceptFriend(friend_id,true);
+            await acceptFriend(friend_id,true);
         });
     
     });
@@ -359,9 +360,9 @@ function writeToListeners(){
 function refuseFriendListeners(){
     const buttons = document.querySelectorAll(".ref-btn");
     buttons.forEach((button)=>{
-        button.addEventListener('click', (event)=>{
+        button.addEventListener('click', async (event)=>{
             const friendname = event.target.id;
-            acceptFriend(friendname,false);
+            await acceptFriend(friendname,false);
         });
     
     });
@@ -392,11 +393,11 @@ function removeFriend(friend_id) {
     };
     fetch('http://'+IP+':8000/api/friends/'+id+'/remove', options)
     .then(response => response.json())
-    .then(data => {
+    .then(async data => {
         console.log(data);
         if(data.status === 'success'){
             //got conversations
-            refreshFriends();
+            await refreshFriends();
         }
         else{
             //error in the backend
@@ -475,12 +476,12 @@ function acceptFriend(friend_id, accepted){
     };
     fetch('http://'+IP+':8000/api/friends/'+id+'/accept', options)
     .then(response => response.json())
-    .then(data => {
+    .then(async data => {
         console.log(data);
         if(data.status === 'success'){
             //got conversations
             status_label.innerText = data.content;
-            refreshFriends();
+            await refreshFriends();
         }
         else{
             //error in the backend
