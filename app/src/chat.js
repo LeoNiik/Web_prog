@@ -64,6 +64,7 @@ function registerMessage(){
     message = messageInput.value.trim();
     console.log('[DEBUG] newMessage:: message '+ message);    
     if(message==='') return;
+    
     let shownTime = time.getHours()+':'+time.getMinutes();
     const options = {
         method: 'POST',
