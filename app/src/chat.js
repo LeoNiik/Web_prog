@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', async (event) => {
     assignEventListeners();
-    // await showConvs();
+    await refreshConvs();
     // Apri il popup modale
 ///poroceopces//////
 }); 
@@ -8,34 +8,62 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 const IP = '192.168.1.42';
 //
 
-function sendMessage() {
+function newMessage() {
 
-    const messageInput = document.getElementById('new-message');
-    const messageOutput = document.getElementById('messages');
-    const message = messageInput.value.trim();
-    console.log("Messaggio da inviare: " + message);
-    
-    if(message==='') return;
-    let shownTime = registerMessage(message);
+
+    let data = registerMessage(message);
     //forse si puo fare ritornare al backend l ora im modo che glio orari siano piu consistenti
     if (message !== '') {
         console.log("Messaggio inviato: " + message);
         messageInput.value = ''; // Reset campo di input
     }
-    messageOutput.innerHTML += 
-    '<div class="message">\
-        <p class="message-text">'+message+'</p>\
-        <div class="message-info">\
-            <span class="message-time">'+shownTime+'</span>\
-        </div>\
-    </div>';
+
+}
+
+async function getMessages(conv_id){
+    let id = sessionStorage.getItem('sessid');
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({id, conv_id})
+    };
+    //fai
+    try {
+        const response = await fetch('http://' + IP + ':8000/api/get_message/', options);
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+        return null;  // or you can return an empty array or object depending on your needs
+    }
+
+
+}
+
+
+async function refreshMessages(){
+    let id = sessionStorage.getItem('sessid');
+    const messageDiv = document.getElementById('messages');
+    const messageData = await getMessages();
+
+    if(messageData === 'success'){
+        messageDiv.innerHTML = messageData.content;
+    } 
+
 }
 //send the message (with time, sender, receiver) to the backend
 function registerMessage(){
     let id = sessionStorage.getItem('sessid');
-    let message = document.getElementById('new-message').value;
+    let messageInput = document.getElementById('new-message').value;
     let receiver = document.querySelector('.contact-name');
     let time = new Date();
+    
+    message = messageInput.value.trim();
+    console.log('[DEBUG] newMessage:: message '+ message);    
+    if(message==='') return;
     let shownTime = time.getHours()+':'+time.getMinutes();
     const options = {
         method: 'POST',
@@ -44,7 +72,7 @@ function registerMessage(){
         },
         body: JSON.stringify({id, message, receiver, shownTime})
     };
-    fetch('http://'+IP+':8000/api/message', options)
+    fetch('http://'+IP+':8000/api/send_message', options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -55,17 +83,28 @@ function registerMessage(){
             console.log('message not sent');
         }
     })
+    .catch(error => console.error('Error:', error));
+    return data;
     
 }
-async function showConvs(){
-    const data = await getFriends();
-    let sidebar = document.getElementById('entries-wrapper');
-    console.log(data);
-    if(data.status === 'success'){
-        //got conversations
-        sidebar.innerHTML = data.convs;
+async function getConvs(){
+    //"/api/convs/:id"
+    let id = sessionStorage.getItem('sessid');
+    const options = {
+        method: 'GET',
+        headers: {
+        'Content-Type': 'application/json'
+        }
+    };
+    try {
+        const response = await fetch('http://' + IP + ':8000/api/convs/' + id, options);
+        const data = await response.json();
+        console.log('[LOG] getConvs() data: ' + data);
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+        return null;  // or you can return an empty array or object depending on your needs
     }
-        //aggiundo data.convs a entries-wrapper di home.html}
 }
 //BISOGNA USARE SESSION PER l id della sessione e localStorage per il remember-me
 
@@ -136,14 +175,16 @@ async function getFriends(){
         return null;  // or you can return an empty array or object depending on your needs
     }
 }
+
 async function newChat(friend_id){
     const convName = document.getElementById('chat-name').value;
     //prendo l id dell amico
     let id = sessionStorage.getItem('sessid');
     const data = { 
-        convName,
-        friend_id
+        convName :convName,
+        friend_id : friend_id
     };     
+    console.log(data)
     const options = {
         method: 'POST',
         headers: {
@@ -151,21 +192,23 @@ async function newChat(friend_id){
             },
             body: JSON.stringify(data)
         };
-    console.log("new chat");
-    fetch('http://'+IP+':8000/api/convs/'+id+'/create', options)
+
+    await fetch('http://'+IP+':8000/api/convs/'+id+'/create', options)
     .then(response => response.json())
     .then(data => {
         console.log(data);
         if(data.status === 'success'){
             console.log('Chat creata');
+        }else{
+            console.log('internal err');
         }
     }); 
 }
 function showChat(name){
     let id = sessionStorage.getItem('sessid');
     const data = { 
-        id,
-        name
+        id : id,
+        name : name
     };     
     const options = {
         method: 'POST',
@@ -351,9 +394,11 @@ function writeToListeners(){
     const entries = document.querySelectorAll(".write-to-entry");
     console.log(entries);
     entries.forEach((button)=>{
-        button.addEventListener('click', (event)=>{
-            const friend_id = event.target.id;
-            newChat(friend_id);
+        button.addEventListener('click', async (event)=>{
+            const friend_id = button.id;
+            console.log('clicked write to'+friend_id);
+            await newChat(friend_id);
+            refreshConvs();
         });
     });
 }
@@ -361,7 +406,7 @@ function refuseFriendListeners(){
     const buttons = document.querySelectorAll(".ref-btn");
     buttons.forEach((button)=>{
         button.addEventListener('click', async (event)=>{
-            const friendname = event.target.id;
+            const friendname = button.id;
             await acceptFriend(friendname,false);
         });
     
@@ -372,11 +417,24 @@ function removeFriendsListeners(){
     buttons.forEach((button)=>{
         button.addEventListener('click', (event)=>{
         
-            const friend_id = event.target.id;
-            console.log(event.target);
+            const friend_id = button.id;
             removeFriend(friend_id);
         });
     });
+}
+function openConvListeners(){
+    const buttons = document.querySelectorAll(".open-conv-btn");
+    console.log(buttons);
+    buttons.forEach((button)=>{
+        button.addEventListener('click', (event)=>{
+            const conv_id = button.id;
+            console.log('[DEBUG] openConv clicked'+ conv_id);
+            openConv(conv_id);
+        });
+    });
+}
+function openConv(conv_id){
+    
 }
 function removeFriend(friend_id) {
     let id = sessionStorage.getItem('sessid');
@@ -430,7 +488,6 @@ async function getPendingRequests(){
 }
 
 async function refreshFriends(){
-    console.log('golem negro');
     let pendingData = await getPendingRequests();
     let friendData = await getFriends();
     let friendDiv = document.getElementById('friends-wrapper'); 
@@ -460,6 +517,19 @@ async function refreshFriends(){
     refuseFriendListeners();
     writeToListeners();
 }
+ 
+async function refreshConvs(){
+    //faccio una riciesta alla api per avere le conversazioni 
+    // "/api/convs/:id"
+    let convData = await getConvs();
+    convDiv = document.getElementById("entries-wrapper");
+
+    if(convData.status === 'success'){
+        convDiv.innerHTML = convData.content;
+    }
+    openConvListeners();
+}
+
 function acceptFriend(friend_id, accepted){
     let id = sessionStorage.getItem('sessid');
     let status_label = document.getElementById('res-friend');

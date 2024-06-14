@@ -107,46 +107,56 @@ async function generateUniqueID() {
 //TODO trovare un modo per assegnare
 app.get("/api/convs/:id", async (req, res) => {
 	try {
-		const id = req.params.id;
-
-		const result = await client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON session_id WHERE session_id = $1', [id]);
-
+		const sessid = req.params.id;
+		let user = await getUserBySessID(sessid);
+		console.log(user);
+		if (!user) {
+			return res.status(401).send({
+				status : "Error getting current user"
+			});
+		}
+		const result = await client.query('SELECT conversation_id,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON user_id=users.id WHERE users.id = $1', [user.id]);
+		console.log('[DEBUG] result:', result.rows);
 		if (result.rows.length === 0) {
 			res.status(401).send({
 				status : "No conversations found"
 			});
 			return;
 		}
+		
 
+		//retrieva il nome dell' amico con cui abbiamo la conversazione
 		//return the conversation as HTML
 		//TODO order the convs by lastUpdate
 		let dinamicContent = '';
 
-		
-		result.rows.forEach(element => {
-			const {conversation_id,name, updated_at} = element;
+		for (const element of result.rows) {
+			const {conversation_id, updated_at} = element;
+			console.log('[DEBUG] element:', element);
 			let time = utils.extractTime(updated_at);
-			console.log(conversation_id,name,time);
-
+			console.log(conversation_id,time);
+			const convName = await client.query('SELECT username FROM Users JOIN (SELECT user_id FROM Conversation_Participants WHERE conversation_id = $1) on id!=$2', [conversation_id,user.id]);
+			console.log('[DEBUG] convName:', convName.rows[0].username);
 			dinamicContent += 
-			'<div class="sidebar-entry" id="'+conversation_id+'">\
+			'<div class="sidebar-entry open-conv-btn" id="'+conversation_id+'">\
 				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
 				<div class="chat-info">\
-					<span class="chat-name">'+name+'</span>\
+					<span class="chat-name">'+ convName.rows[0].username +'</span>\
 				</div>\
 				<div class="notification-info">\
 					<span class="time">'+time+'</span>\
-					<span class="notifications">3</span>\
+					<span class="notifications">∞你妈+</span>\
 				</div>\
-			</div>'
-		});
+			</div>';
+		}
+		console.log('[DEBUG] dinamicContent:', dinamicContent);
 		res.status(201).send({
 			status : "success",
 			content : dinamicContent
 		});
 
 	} catch (error) {
-		
+		console.error(error);
 	}
 });
 // add a new friend
@@ -221,7 +231,8 @@ app.post('/api/friends/:id/accept', async (req, res) => {
 			await client.query('UPDATE friends SET status = $1 WHERE user_id = $2 AND friend_id = $3', ['accepted', user.id, friend_id]);
 			await client.query('UPDATE friends SET status = $1 WHERE friend_id = $2 AND user_id = $3', ['accepted', user.id, friend_id]);
 		}else{
-			await client.query('DELETE from friends WHERE user_id=$1 and friend_id=$2 and status=$3',[friend_id,user.id,'pending'])
+			await client.query('DELETE from friends WHERE user_id=$1 and friend_id=$2 and status=$3',[friend_id,user.id,'sent']);
+			await client.query('DELETE from friends WHERE user_id=$1 and friend_id=$2 and status=$3',[user.id,friend_id,'pending']); 
 		}
 		
 		res.status(200).send({
@@ -321,35 +332,9 @@ app.get("/api/friends/:id", async (req, res) => {
 		// </div>'
 
 
-
-		//retrievo il conversation_id
-		// let conversation_ids = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1', [user.id]);
-		// //prendo il nome dell' amico con cui ha la conversazione
-		// // let partecipants_id = await client.query('SELECT user_id FROM Conversation_Participants WHERE conversation_id = $1', [conversation_ids.rows[0].conversation_id]);
-		// // console.log(partecipants_id);
-		// //prendo l'id dentro partecipants_id che non e' uguale a user.id
-		// let friend_id = partecipants_id.rows[0].user_id === user.id ? partecipants_id.rows[1].user_id : partecipants_id.rows[0].user_id;
-		// let friend_name = await client.query('SELECT username FROM Users WHERE id = $1', [friend_id]);
-		// friend_name = friend_name.rows[0].username;
-
-		let convs = '<h2>Conversations</h2>';
-		// conversation_ids.rows.forEach(element => {
-		// 	convs += '\
-		// 	<div class="sidebar-entry" id="'+element.conversation_id+'">\
-		// 		<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
-		// 		<div class="chat-info">\
-		// 			<span class="chat-name">'+ friend_name + '</span>\
-		// 		</div>\
-		// 		<div class="notification-info">\
-		// 			<span class="time">time</span>\
-		// 			<span class="notifications">3</span>\
-		// 		</div>\;\
-		// 	</div>'
-		// });
 		res.status(201).send({
 			status : "success",
 			content : dinamicContent,
-			convs : convs,
 			writeTo : writeToContent
 		});
 		
@@ -588,27 +573,29 @@ app.post('/api/auth/sessid', async (req,res) => {
 
 app.post('/api/convs/:id/create', async (req,res) => {
 	const sessid = req.params.id;
+	console.log('body in convs::create'+req.body);
 	const friend_id = req.body.friend_id;
 	let user = await getUserBySessID(sessid);
-		
+	
 	if (!user) {
 		return res.status(401).send({
 			status : "Error getting current user"
 		});
 	}
 	try {
+		//checko se esite gia' una conversazione con lo stesso friend_id
+		const check = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1 INTERSECT SELECT conversation_id FROM Conversation_Participants WHERE user_id = $2', [user.id, friend_id]);
+		
+		if(check.rows.length != 0){
+			return res.status(401).send({status : "error",
+				content : "conversation already exists"
+			});
+		}
 		//creo una conversazione senza inserire niente e ritorno l'id
 		let conv_id = await client.query('INSERT INTO Conversations DEFAULT VALUES RETURNING id');
 		if(conv_id.rows.length === 0){
 			res.status(401).send({status : "error",
 				content : "failed to create conversation"
-			});
-		}
-		//checko se esite gia' una conversazione con lo stesso friend_id
-		const check = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1 INTERSECT SELECT conversation_id FROM Conversation_Participants WHERE user_id = $2', [user.id, friend_id]);
-		if(check.rows.length != 0){
-			res.status(401).send({status : "error",
-				content : "conversation already exists"
 			});
 		}
 		//inserico 2 entry a Conversation Partecipants con id e friend_id
