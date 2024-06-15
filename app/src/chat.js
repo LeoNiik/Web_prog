@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 ///poroceopces//////
 }); 
 
-const IP = '192.168.1.42';
+const IP = '192.168.1.9';
 //
 
 function newMessage() {
@@ -88,9 +88,7 @@ function registerMessage(){
     return data;
     
 }
-async function getConvs(){
-    //"/api/convs/:id"
-    let id = sessionStorage.getItem('sessid');
+async function getRequest(url){
     const options = {
         method: 'GET',
         headers: {
@@ -98,14 +96,39 @@ async function getConvs(){
         }
     };
     try {
-        const response = await fetch('http://' + IP + ':8000/api/convs/' + id, options);
+        const response = await fetch(url, options);
         const data = await response.json();
-        console.log('[LOG] getConvs() data: ' + data);
+        console.log(data);
         return data;
     } catch (error) {
-        console.error('Error:', error);
+        console.log('Error:', error);
         return null;  // or you can return an empty array or object depending on your needs
     }
+}
+async function postRequest(url,data){
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    };
+    try {
+        const response = await fetch(url, options);
+        const data = await response.json();
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.log('Error:', error);
+        return null;  // or you can return an empty array or object depending on your needs
+    }
+}
+async function getConvs(){
+    //"/api/convs/:id"
+    let id = sessionStorage.getItem('sessid');
+    const data = getRequest('http://' + IP + ':8000/api/convs/' + id);
+    console.log('[LOG] getConvs() data: ' + data);
+    return data
 }
 //BISOGNA USARE SESSION PER l id della sessione e localStorage per il remember-me
 
@@ -152,87 +175,22 @@ function searchConv() {
 }
 //prendo in input il nome dell' utente della chat e chiedo al backend la chat
 
-// function showChat(nome){
-//     let id = sessionStorage.getItem('sessid');
-
-//     //mando una post
-// }
-
-async function getFriends(){
-    let id = sessionStorage.getItem('sessid');
-    const options = {
-        method: 'GET',
-        headers: {
-        'Content-Type': 'application/json'
-        }
-    };
-    try {
-        const response = await fetch('http://' + IP + ':8000/api/friends/' + id, options);
-        const data = await response.json();
-        console.log(data);
-        return data;
-    } catch (error) {
-        console.log('Error:', error);
-        return null;  // or you can return an empty array or object depending on your needs
-    }
+async function getFriends() {
+    const id = sessionStorage.getItem('sessid');
+    const data = getRequest('http://' + IP + ':8000/api/friends/' + id);
+    console.log(data);
+    return data;
 }
 
 async function newChat(friend_id){
-    const convName = document.getElementById('chat-name').value;
     //prendo l id dell amico
     let id = sessionStorage.getItem('sessid');
-    const data = { 
-        convName :convName,
+    const sendData = { 
         friend_id : friend_id
-    };     
-    console.log(data)
-    const options = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        };
-
-    await fetch('http://'+IP+':8000/api/convs/'+id+'/create', options)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        if(data.status === 'success'){
-            console.log('Chat creata');
-        }else{
-            console.log('internal err');
-        }
-    }); 
-}
-function showChat(name){
-    let id = sessionStorage.getItem('sessid');
-    const data = { 
-        id : id,
-        name : name
-    };     
-    const options = {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
     };
-    fetch('http://'+IP+':8000/api/chat', options)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        if(data.status === 'success'){
-            //got conversations
-            messages.innerHTML = data.content;
-            assignEventListeners();
-        }
-        else{
-            //error in the backend
-            sidebar.innerHTML = data.content;
-            assignEventListeners();
-        }
-    });  
+    const resData = postRequest('http://'+IP+':8000/api/convs/'+id+'/create', sendData);
+
+    console.log(resData)
 }
 
 //risolvere problema dei click esponenziali
@@ -437,32 +395,23 @@ function openConvListeners(){
 function openConv(conv_id){
     
 }
-function removeFriend(friend_id) {
+async function removeFriend(friend_id) {
+    //prendo l id dell amico
     let id = sessionStorage.getItem('sessid');
     let status_label = document.getElementById('res-friend');
-    const data = { 
+    const sendData = { 
         friend_id : friend_id
-    };     
-    const options = {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
     };
-    fetch('http://'+IP+':8000/api/friends/'+id+'/remove', options)
-    .then(response => response.json())
-    .then(async data => {
-        console.log(data);
-        if(data.status === 'success'){
-            //got conversations
-            await refreshFriends();
+    const resData = await postRequest('http://'+IP+':8000/api/friends/'+id+'/remove', sendData);
+    if(resData.status === 'success'){
+        //got conversations
+        await refreshFriends();
         }
-        else{
-            //error in the backend
-            status_label.innerText = data.status;
+    else{
+        //error in the backend
+        status_label.innerText = data.status;
         }
-    }); 
+    console.log(resData)
 }
 
 function closeDropdown(){
@@ -471,21 +420,10 @@ function closeDropdown(){
 
 }
 async function getPendingRequests(){
-    let id = sessionStorage.getItem('sessid');
-    const options = {
-        method: 'GET',
-        headers: {
-        'Content-Type': 'application/json'
-        }
-    };
-    try {
-        const response = await fetch('http://' + IP + ':8000/api/friends/' + id + '/pending', options);
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Error:', error);
-        return null;  // or you can return an empty array or object depending on your needs
-    }
+    const id = sessionStorage.getItem('sessid');
+    const data = getRequest('http://' + IP + ':8000/api/friends/' + id +'/pending');
+    console.log(data);
+    return data;
 }
 
 async function refreshFriends(){
@@ -531,34 +469,18 @@ async function refreshConvs(){
     openConvListeners();
 }
 
-function acceptFriend(friend_id, accepted){
+async function acceptFriend(friend_id, accepted){
     let id = sessionStorage.getItem('sessid');
     let status_label = document.getElementById('res-friend');
-    const data = { 
+    const sendData = { 
         friend_id : friend_id,
         accept : accepted
-    };     
-    const options = {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    };
-    fetch('http://'+IP+':8000/api/friends/'+id+'/accept', options)
-    .then(response => response.json())
-    .then(async data => {
-        console.log(data);
-        if(data.status === 'success'){
-            //got conversations
-            status_label.innerText = data.content;
-            await refreshFriends();
-        }
-        else{
-            //error in the backend
-            status_label.innerText = data.status;
-        }
-    }); 
+    }; 
+    const resData = await postRequest('http://'+IP+':8000/api/friends/'+id+'/accept', sendData);
+    console.log(resData);
+    if(resData.status === 'success'){
+        await refreshFriends();    
+    } 
 }
 
 
@@ -566,29 +488,13 @@ function newFriend(){
     let id = sessionStorage.getItem('sessid');
     let status_label = document.getElementById('res-friend');
     const friendname = document.getElementById('friend-name');
-    const data = { 
+    const sendData = {
         name : friendname.value
-    };     
-    const options = {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    };
-    fetch('http://'+IP+':8000/api/friends/'+id, options)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        if(data.status === 'success'){
-            //got conversations
-            status_label.innerText = data.content;
-        }
-        else{
-            //error in the backend
-            status_label.innerText = data.status;
-        }
-    });  
+    }
+    const resData = postRequest('http://'+IP+':8000/api/friends/'+id,sendData);  
+    if(resData.status === 'success'){
+        status_label.innerText = resData.content;
+    }
 }
 
 //TODO

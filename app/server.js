@@ -15,7 +15,7 @@ const nodemailer = require('nodemailer');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-const IP = '192.168.1.42'; //just for testing
+const IP = '192.168.1.9'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
@@ -524,7 +524,50 @@ app.post('/api/login', async (req, res) => {
 	}
 });
 
-app.post('/api/message', async (req,res) => {
+app.post('/api/get_messages', async (req,res) => {
+	const {sessid, conv_id} = req.body;
+	try {
+		const user = await client.query('SELECT id FROM Users WHERE session_id = $1', [sessid]);
+		if(user.rows.length === 0){
+			res.status(401).send({status : "User not found"});
+		}
+		//seleziono tutti i messaggi della conversazione
+		const messages = await client.query('SELECT content,timestamp FROM Messages WHERE conversation_id = $1', [conv_id]);
+
+		//sorto messaggi per timestamp
+		messages.rows.sort((a,b) => {
+			return a.timestamp - b.timestamp;
+		});
+		//return the conversation as HTML
+
+		let dinamicContent = '';
+		messages.rows.forEach(element => {
+			const {content, timestamp} = element;
+			let time = utils.extractTime(timestamp);
+			console.log(content,time);
+			
+			dinamicContent += 
+			'<div class="message">\
+				<div class="message-content">\
+					<p>'+content+'</p>\
+				</div>\
+				<div class="message-info">\
+					<span class="message-time">'+time+'</span>\
+				</div>\
+			</div>'
+		});
+		res.status(201).send({
+			status : "success",
+			content : dinamicContent
+
+		});
+		
+	} catch (error) {
+		console.log('Error during conversation query')
+	}
+});
+
+app.post('/api/send_message', async (req,res) => {
 	const {sessid, message, receiver, time} = req.body;
 	try {
 		const user = await client.query('SELECT id FROM Users WHERE session_id = $1', [sessid]);
@@ -550,6 +593,8 @@ app.post('/api/message', async (req,res) => {
 			res.status(401).send({status : "No Messages found"});
 
 		}
+		//return the conversation as HTML
+
 		res.status(200).send({status : "success"});
 	} catch (error) {
 		console.log('Error during message query')
