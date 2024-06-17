@@ -499,15 +499,27 @@ function newFriend(){
 
 //TODO
     //
-    //add a friendship system (update db) <-- leonardo
+    //add a friendship system (update db) <-- leonardo (fatto)
     //
-    //how to manage user session 
+    //how to manage user session (fatto(?))
     //  
-    //implement newChat(), newFriend(), retrieveChat(), 
+    //implement newChat(), newFriend() (fatto)
+    //
+    //in removeFriends() lato server eliminare anche le conversazioni tra i due se esistono
+    //
+    //retrieveChat()
+    //
+    //aggiungere un sistema di storage delle immagini degli utenti
+    //
+    //modificare lo stile
+    //
+    //far apparire in chat-wrapper la chat al click
+    //
+    //aggiungere invio file (facoltativo/se rimane tempo)
+    //
+    //la cazzo di searchbar
     //
     // last but not least implement all real time message logic
-    //
-    //
 
 //TODO home.html
 
