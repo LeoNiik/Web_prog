@@ -20,3 +20,5 @@ execdb:
 clean:
 	make down
 	sudo docker volume rm db-default
+dblog:
+	sudo docker logs web_prog-app-db-1

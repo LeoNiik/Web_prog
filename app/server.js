@@ -15,7 +15,7 @@ const nodemailer = require('nodemailer');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-const IP = '192.168.1.9'; //just for testing
+const IP = '192.168.1.42'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
@@ -116,10 +116,11 @@ app.get("/api/convs/:id", async (req, res) => {
 			});
 		}
 		const result = await client.query('SELECT conversation_id,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON user_id=users.id WHERE users.id = $1', [user.id]);
-		console.log('[DEBUG] result:', result.rows);
+		console.log('[DEBUG] result:', result.rows.length);
 		if (result.rows.length === 0) {
 			res.status(401).send({
-				status : "No conversations found"
+				status : 'success',
+				content : "No conversations found"
 			});
 			return;
 		}
@@ -227,12 +228,15 @@ app.post('/api/friends/:id/accept', async (req, res) => {
 				status : "Error getting current user"
 			});
 		}
-		if(accept){
+		if(accept === true){
 			await client.query('UPDATE friends SET status = $1 WHERE user_id = $2 AND friend_id = $3', ['accepted', user.id, friend_id]);
 			await client.query('UPDATE friends SET status = $1 WHERE friend_id = $2 AND user_id = $3', ['accepted', user.id, friend_id]);
-		}else{
+		}else if(accept === false){
 			await client.query('DELETE from friends WHERE user_id=$1 and friend_id=$2 and status=$3',[friend_id,user.id,'sent']);
 			await client.query('DELETE from friends WHERE user_id=$1 and friend_id=$2 and status=$3',[user.id,friend_id,'pending']); 
+		}else if(accept === 'cancel'){
+			await client.query('DELETE from friends WHERE user_id=$1 and friend_id=$2 and status=$3',[friend_id,user.id,'pending']);
+			await client.query('DELETE from friends WHERE user_id=$1 and friend_id=$2 and status=$3',[user.id,friend_id,'sent']); 
 		}
 		
 		res.status(200).send({
@@ -320,18 +324,6 @@ app.get("/api/friends/:id", async (req, res) => {
 	
 		});
 
-		// '<div class="sidebar-entry" id="'+conversation_id+'">\
-		// <img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
-		// <div class="chat-info">\
-		// 	<span class="chat-name">'+name+'</span>\
-		// </div>\
-		// <div class="notification-info">\
-		// 	<span class="time">'+time+'</span>\
-		// 	<span class="notifications">3</span>\
-		// </div>\
-		// </div>'
-
-
 		res.status(201).send({
 			status : "success",
 			content : dinamicContent,
@@ -358,9 +350,6 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 		
 		let dinamicContent = '<h2>Pending</h2>';
 		let result = await client.query("SELECT username,id FROM users JOIN (SELECT friend_id FROM friends WHERE user_id=$1 AND status=$2) on id=friend_id;", [user.id,'pending']);
-
-
-
 		//ritorna l' elemento solo all' amico che ha ricevuot la richiesta
 		
 		if (result.rows.length === 0) {
@@ -373,11 +362,51 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 		}
 
 		//return the friend requests as HTML
-	
-
-		
 		result.rows.forEach(element => {
 			dinamicContent += '<div class="friend-entry"><p>request from '+element.username+'</p><button id='+element.id+' class="acc-btn">accept</button><button id='+element.id+' class="ref-btn">refuse</button></div>'; 
+		});
+		res.status(201).send({
+			status : "success",
+			content : dinamicContent
+		});
+
+	} catch (error) {
+		console.log(error);
+		res.status(201).send({
+			status : "internal error"
+		});
+	}
+});
+
+app.get("/api/friends/:id/sent", async (req, res) => {
+	try {
+		const sessid = req.params.id;
+		
+		let user = await getUserBySessID(sessid);
+		
+		if (!user) {
+			return res.status(401).send({
+				status : "Error getting current user"
+			});
+		}
+		
+		let dinamicContent = '<h2>Sent</h2>';
+		let result = await client.query("SELECT username,id FROM users join (SELECT friend_id FROM friends WHERE user_id=$1 AND status=$2) on id=friend_id; ", [user.id,'sent']);
+		//ritorna l' elemento solo all' amico che ha ricevuot la richiesta
+		
+		if (result.rows.length === 0) {
+			dinamicContent += 'No sent requests';
+			res.status(201).send({
+				status : "success",
+				content : dinamicContent  
+			});
+			return;
+		}
+		//SELECT user_id FROM friends WHERE user_id=$1 AND status=$2 JOIN users where
+
+		//return the friend requests as HTML
+		result.rows.forEach(element => {
+			dinamicContent += '<div class="friend-entry"><p>request from '+element.username+'</p><button id='+element.id+' class="canc-btn">cancel</button></div>'; 
 		});
 		res.status(201).send({
 			status : "success",
@@ -896,7 +925,7 @@ app.listen(PORT, HOST);
 // CREATE TABLE friends (
 //     user_id INT,
 //     friend_id INT,
-//     status ENUM('pending', 'accepted', 'declined') DEFAULT 'pending',
+//     status ENUM('pending', 'accepted', 'declined','sent') DEFAULT 'pending',
 //     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 //     PRIMARY KEY (user_id, friend_id),
 //     FOREIGN KEY (user_id) REFERENCES users(user_id),

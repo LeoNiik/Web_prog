@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 ///poroceopces//////
 }); 
 
-const IP = '192.168.1.9';
+const IP = '192.168.1.42';
 //
 
 function newMessage() {
@@ -98,7 +98,6 @@ async function getRequest(url){
     try {
         const response = await fetch(url, options);
         const data = await response.json();
-        console.log(data);
         return data;
     } catch (error) {
         console.log('Error:', error);
@@ -116,7 +115,6 @@ async function postRequest(url,data){
     try {
         const response = await fetch(url, options);
         const data = await response.json();
-        console.log(data);
         return data;
     } catch (error) {
         console.log('Error:', error);
@@ -126,8 +124,8 @@ async function postRequest(url,data){
 async function getConvs(){
     //"/api/convs/:id"
     let id = sessionStorage.getItem('sessid');
-    const data = getRequest('http://' + IP + ':8000/api/convs/' + id);
-    console.log('[LOG] getConvs() data: ' + data);
+    const data = await getRequest('http://' + IP + ':8000/api/convs/' + id);
+    console.log('[LOG] getConvs() data: ' + data.content);
     return data
 }
 //BISOGNA USARE SESSION PER l id della sessione e localStorage per il remember-me
@@ -177,7 +175,7 @@ function searchConv() {
 
 async function getFriends() {
     const id = sessionStorage.getItem('sessid');
-    const data = getRequest('http://' + IP + ':8000/api/friends/' + id);
+    const data = await getRequest('http://' + IP + ':8000/api/friends/' + id);
     console.log(data);
     return data;
 }
@@ -371,6 +369,16 @@ function refuseFriendListeners(){
     
     });
 }
+function cancelFriendReqListeners(){
+    const buttons = document.querySelectorAll(".canc-btn");
+    buttons.forEach((button)=>{
+        button.addEventListener('click', async (event)=>{
+            const friendname = button.id;
+            await acceptFriend(friendname,'cancel');
+        });
+    
+    });
+}
 function removeFriendsListeners(){
     const buttons = document.querySelectorAll(".rmfriend-btn");
     buttons.forEach((button)=>{
@@ -421,20 +429,27 @@ function closeDropdown(){
 }
 async function getPendingRequests(){
     const id = sessionStorage.getItem('sessid');
-    const data = getRequest('http://' + IP + ':8000/api/friends/' + id +'/pending');
+    const data = await getRequest('http://' + IP + ':8000/api/friends/' + id +'/pending');
     console.log(data);
     return data;
 }
-
+async function getSentRequests(){
+    const id = sessionStorage.getItem('sessid');
+    const data = await getRequest('http://' + IP + ':8000/api/friends/' + id +'/sent');
+    console.log(data);
+    return data;
+}
 async function refreshFriends(){
     let pendingData = await getPendingRequests();
     let friendData = await getFriends();
-    let friendDiv = document.getElementById('friends-wrapper'); 
+    let sentData = await getSentRequests();
     console.log(friendData);
     console.log(pendingData);
-
+    if(!sentData) return;
     if(!pendingData) return;
     if(!friendData) return;
+    const sentDiv = document.getElementById('sent-req');
+    const friendDiv = document.getElementById('friends-wrapper'); 
     const pendingDiv = document.getElementById("pending");
     const activeDiv = document.getElementById("active-friends");
 
@@ -445,16 +460,22 @@ async function refreshFriends(){
         activeDiv.innerHTML = "error fetching friends";
         friendDiv.innerHTML = 'error';
     }
+    if(sentData.status === 'success'){
+        sentDiv.innerHTML = sentData.content;
+    }else{
+        sentDiv.innerHTML = "error fetching sent requests";
+    }
     
     if(pendingData.status === 'success'){
         pendingDiv.innerHTML = pendingData.content;
     }else{
-        pendingDiv.innerHTML = "error fetching requests";
+        pendingDiv.innerHTML = "error fetching pending requests";
     }
     removeFriendsListeners();
     acceptFriendListeners();
     refuseFriendListeners();
     writeToListeners();
+    cancelFriendReqListeners();
 }
  
 async function refreshConvs(){
@@ -484,15 +505,18 @@ async function acceptFriend(friend_id, accepted){
 }
 
 
-function newFriend(){
+async function newFriend(){
     let id = sessionStorage.getItem('sessid');
     let status_label = document.getElementById('res-friend');
     const friendname = document.getElementById('friend-name');
     const sendData = {
         name : friendname.value
     }
-    const resData = postRequest('http://'+IP+':8000/api/friends/'+id,sendData);  
+    const resData = await postRequest('http://'+IP+':8000/api/friends/'+id,sendData); 
+    console.log(resData) 
     if(resData.status === 'success'){
+        status_label.innerText = resData.content;
+    }else{
         status_label.innerText = resData.content;
     }
 }
@@ -505,7 +529,7 @@ function newFriend(){
     //  
     //implement newChat(), newFriend() (fatto)
     //
-    //in removeFriends() lato server eliminare anche le conversazioni tra i due se esistono
+    //in removeFriends() lato server eliminare anche le conversazionie i messaggi tra i due se esistono
     //
     //retrieveChat()
     //
