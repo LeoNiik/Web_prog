@@ -5,7 +5,7 @@ const { Client } = require('pg');
 var bodyParser = require('body-parser')
 const { createHash } = require('crypto');
 const utils = require('./utils');
-
+const Server = require('socket.io');
 const nodemailer = require('nodemailer');
 
 
@@ -37,6 +37,21 @@ client
 client.query('SET search_path to prova');
 
 const app = express();
+const expressServer = app.listen(PORT, HOST);
+const io = Server(expressServer, {
+    cors: {
+        origin: process.env.NODE_ENV === "production" ? false : ["http://${IP}:8000", 'http://localhost:8000' , "http://127.0.0.1:8000"]
+    }
+});
+
+io.on('connection', socket => {
+    console.log(`User ${socket.id} connected`)
+
+    socket.on('ciao', data => {
+        console.log(data)
+        // io.emit('ciao', `${socket.id.substring(0, 5)}: ${data}`)
+    })
+})
 
 app.use(express.static('public'));
 app.use(express.static('src'));
@@ -894,7 +909,6 @@ app.get('/home', (req,res) => {
 	}
 });
 
-app.listen(PORT, HOST);
 
 
 // CREATE TABLE Users (

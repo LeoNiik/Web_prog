@@ -4,13 +4,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     // Apri il popup modale
 ///poroceopces//////
 }); 
-
 const IP = '192.168.1.42';
-//
+const socket = io('ws://'+IP+':8000');
 
 function newMessage() {
-
-
+    const input = document.querySelector('#new-message');
+    if (input.value) {
+        socket.emit('ciao', input.value)
+        input.value = ""
+    }
+    input.focus()
+    return;
     let data = registerMessage(message);
     //forse si puo fare ritornare al backend l ora im modo che glio orari siano piu consistenti
     if (message !== '') {
@@ -240,7 +244,7 @@ function assignEventListeners() {
         messageInput.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                sendMessage();
+                newMessage();
             }
         
         });
