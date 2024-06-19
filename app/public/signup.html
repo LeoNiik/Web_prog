@@ -6,10 +6,77 @@
     <title>Hello, World!</title>
     <link rel="stylesheet" href="login.css">
     <script src="prova.js"></script>
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <!-- Link per le icone fontawesome.min.css">   -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 </head>
 <body class="login">
+    
+    <section class="header">
+        <nav>
+          <a href="#"><img src="./images/logo.png"></a>
+          <div class="navbar" id="navBar">
+            <!--      Icona di chiusura del menu per dispositivi mobile: <i class="fa fa-times-circle" onclick="hideMenu()"></i>        -->
+            <i class="fa fa-times-circle" onclick="hideMenu()"></i>
+            <ul>
+              <li><a href="index">HOME</a></li>
+              <li><a href="index#servizi">SERVIZI</a></li>
+              <li><a href="index#about">ABOUT</a></li>
+              <!--<li><a href="#">SIGN UP</a></li>
+              <li><a href="loginProva1.html">LOGIN</a></li> -->
+              <li><a href="home">CHAT</a></li>
+            </ul> 
+          </div>
+          <!--        Icona di apertura del menu per dispositivi mobile:         -->
+          <i class="fa fa-bars" onclick="showMenu()"></i>
+        </nav>
+    
+        <div class="form-container">
+    
+           <!-- Signup Form -->
+    
+           <div class="form signup_form">
+              <h2>Signup</h2>
+    
+              <div class="input-box">
+                <input type="text" placeholder="Enter your username" id="username" required>
+                <i class="fa fa-user-circle user"></i>
+              </div>
+              <div class="input-box">
+                <input type="text" placeholder="Enter your email" id="email" required>
+                <i class="fa fa-envelope-o email"></i>
+              </div>
+              <div class="input-box">
+                <input type="password" placeholder="Enter your password" id="password" required>
+                <i class="fa fa-lock password"></i>
+                <i class="fa fa-eye-slash pwd_hide"></i>
+              </div>
+              <div class="input-box">
+                <input type="password" placeholder="Confirm your password" id="conf-password" required>
+                <i class="fa fa-lock password"></i>
+                <i class="fa fa-eye-slash pwd_hide"></i>
+              </div>
+    
+              <!-- Aggiungere testo per ricordare di controllare la mail per confermare l'account-->
+    
+              <button class="button" id="login-btn" onclick="signupHandler()">Signup Now</button>
+              <div class="login_singup">
+                Alreay have an account?
+                <a href="login">Login</a>
+              </div>
+              <div class="err-text">
+                <label id="err-text"></label>
+            </div>
+           </div>
+        </div>
+      </section>
+
+
+    <!-- Old version starts here -->
+    <!--
     <div class="wrapper">
         <h1>Signup</h1>
         
@@ -33,7 +100,7 @@
             <i class='bx bxs-lock-alt'></i>
         </div>
 
-        <!-- add a text to remind people to check email for confirmation -->
+        
         <label id="email-reminder">Please check your email for confirmation</label>
 
         <button class="btn" id="login-btn" onclick="signupHandler()">Sign Up</button>
@@ -42,5 +109,26 @@
             <label id="err-text"></label>
         </div>      
     </div>
+    -->
+    <!-- Old version ends here -->
+     <!-- JavaScript for Toggle Menu -->
+<script>
+
+    var navBar = document.getElementById("navBar");
+  
+    function showMenu(){
+      navBar.style.right = "0";
+    }
+  
+    function hideMenu(){
+      navBar.style.right = "-200px";
+    }
+  
+  
+  </script>
+  <section class="footer">
+    <h4>Titolo del footer</h4>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sed felis posuere, luctus nunc id, consequat metus.</p>  
+  </section>
 </body>
 </html>

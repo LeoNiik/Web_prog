@@ -1,96 +1,108 @@
 document.addEventListener('DOMContentLoaded', async (event) => {
     assignEventListeners();
+    initSocketConnection();
     await refreshConvs();
     // Apri il popup modale
-///poroceopces//////
+    ///poroceopces//////
 }); 
+var selectedChat
 const IP = '192.168.1.42';
 const socket = io('ws://'+IP+':8000');
 
-function newMessage() {
-    const input = document.querySelector('#new-message');
-    if (input.value) {
-        socket.emit('ciao', input.value)
-        input.value = ""
-    }
-    input.focus()
-    return;
-    let data = registerMessage(message);
-    //forse si puo fare ritornare al backend l ora im modo che glio orari siano piu consistenti
-    if (message !== '') {
-        console.log("Messaggio inviato: " + message);
-        messageInput.value = ''; // Reset campo di input
-    }
-
+// Funzione per inizializzare la connessione
+async function initSocketConnection() {
+    //prendo il sessid dalla sessione
+    
+    let id = sessionStorage.getItem('sessid');
+    socket.emit('setCustomId', id);
+    
 }
+
+//socket on update aggiorna la chat
+socket.on('update-messages', async (conv_id) => {
+    console.log('update received');
+    console.log(conv_id);
+    await refreshMessages(conv_id);
+});
+
+
+
+// function newMessage() {
+//     const input = document.querySelector('#new-message');
+//     if (input.value) {
+//         socket.emit('ciao', input.value)
+//         input.value = ""
+//     }
+//     input.focus()
+//     return;
+//     let data = registerMessage(message);
+//     //forse si puo fare ritornare al backend l ora im modo che glio orari siano piu consistenti
+//     if (message !== '') {
+//         console.log("Messaggio inviato: " + message);
+//         messageInput.value = ''; // Reset campo di input
+//     }
+
+// }
 
 async function getMessages(conv_id){
     let id = sessionStorage.getItem('sessid');
-    const options = {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({id, conv_id})
-    };
-    //fai
     try {
-        const response = await fetch('http://' + IP + ':8000/api/get_message/', options);
-        const data = await response.json();
-        console.log(data);
-        return data;
+        const data = {
+            conv_id : conv_id,
+            id : id
+        };
+        const response = await postRequest('http://'+IP+':8000/api/messages', data);
+
+        return response;
     } catch (error) {
         console.error('Error:', error);
         return null;  // or you can return an empty array or object depending on your needs
     }
-
-
 }
 
 
-async function refreshMessages(){
+async function refreshMessages(conv_id){
     let id = sessionStorage.getItem('sessid');
     const messageDiv = document.getElementById('messages');
-    const messageData = await getMessages();
-
-    if(messageData === 'success'){
+    const messageData = await getMessages(conv_id);
+    console.log('[DEBUG] refreshMessages::conv_id'+ conv_id);
+    // console.log('[DEBUG] refreshMessages::messageData - '+ JSON.stringify(messageData));
+    if(messageData.status === 'success')
         messageDiv.innerHTML = messageData.content;
-    } 
+}
 
+async function getContactName(conv_id) {
+    let id = sessionStorage.getItem('sessid');
+    let sendData = {conv_id : conv_id};
+    const resData = await postRequest('http://'+IP+':8000/api/contact_name/'+id, sendData)
+    return resData;
 }
 //send the message (with time, sender, receiver) to the backend
-function registerMessage(){
+async function newMessage(){
     let id = sessionStorage.getItem('sessid');
-    let messageInput = document.getElementById('new-message').value;
-    let receiver = document.querySelector('.contact-name');
-    let time = new Date();
+    let messageInput = document.getElementById('new-message');
+    let receiver = document.querySelector('#contact-name').innerText;
     
     message = messageInput.value.trim();
-    console.log('[DEBUG] newMessage:: message '+ message);    
+    console.log('[DEBUG] newMessage::   '+ message);    
     if(message==='') return;
     
-    let shownTime = time.getHours()+':'+time.getMinutes();
-    const options = {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({id, message, receiver, shownTime})
+    const sendData = {
+        id : id,
+        message : message,
+        receiver : receiver
     };
-    fetch('http://'+IP+':8000/api/send_message', options)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        if(data.status === 'success'){
-            console.log('message sent');
-        }
-        else{
-            console.log('message not sent');
-        }
-    })
-    .catch(error => console.error('Error:', error));
-    return data;
-    
+        
+    console.log("[DEBUG] newMessage::sendData"+ JSON.stringify(sendData));
+    let resData = await postRequest('http://'+IP+':8000/api/send_message', sendData);
+    console.log("[DEBUG] newMessage::resData"+ JSON.stringify(resData));
+    messageInput.value = ''
+    scrollToBottom();
+    function scrollToBottom() {
+        const scrollableDiv = document.getElementById('messages');
+        scrollableDiv.scrollTop = scrollableDiv.scrollHeight;
+    }
+    return resData;
 }
 async function getRequest(url){
     const options = {
@@ -129,7 +141,7 @@ async function getConvs(){
     //"/api/convs/:id"
     let id = sessionStorage.getItem('sessid');
     const data = await getRequest('http://' + IP + ':8000/api/convs/' + id);
-    console.log('[LOG] getConvs() data: ' + data.content);
+    // console.log('[LOG] getConvs() data: ' + data.content);
     return data
 }
 //BISOGNA USARE SESSION PER l id della sessione e localStorage per il remember-me
@@ -190,9 +202,9 @@ async function newChat(friend_id){
     const sendData = { 
         friend_id : friend_id
     };
-    const resData = postRequest('http://'+IP+':8000/api/convs/'+id+'/create', sendData);
+    const resData = await postRequest('http://'+IP+':8000/api/convs/'+id+'/create', sendData);
 
-    console.log(resData)
+    console.log('[DEBUG]newChat()::resData'+ resData);
 }
 
 //risolvere problema dei click esponenziali
@@ -395,7 +407,7 @@ function removeFriendsListeners(){
 }
 function openConvListeners(){
     const buttons = document.querySelectorAll(".open-conv-btn");
-    console.log(buttons);
+    // console.log(buttons);
     buttons.forEach((button)=>{
         button.addEventListener('click', (event)=>{
             const conv_id = button.id;
@@ -404,8 +416,29 @@ function openConvListeners(){
         });
     });
 }
-function openConv(conv_id){
+async function closeConv(){
+    //pprocido
+    let chatSelected = document.querySelector('.chat-selected');
+    let chatDefault = document.querySelector('.chat-not-selected');
+
+    chatDefault.style.display = 'block';
+    chatSelected.style.display = 'none';
+}
+async function openConv(conv_id){
+    const name = await getContactName(conv_id);
+    // console.log('[DEBUG] openConv::messages -' +  messages.status);
+    let nameSpan = document.getElementById('contact-name');
+    // const messages = await getMessages(conv_id);
+    // let messagesDiv = document.getElementById('messages');
+    let chatSelected = document.querySelector('.chat-selected');
+    let chatDefault = document.querySelector('.chat-not-selected');
     
+    chatDefault.style.display = 'none';
+    chatSelected.style.display = 'flex';
+    
+    await refreshMessages(conv_id);
+    if(name)
+        nameSpan.innerText = name.content;
 }
 async function removeFriend(friend_id) {
     //prendo l id dell amico
