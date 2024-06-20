@@ -7,6 +7,8 @@ const { createHash } = require('crypto');
 const utils = require('./utils');
 const Server = require('socket.io');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+
 
 
 
@@ -45,6 +47,19 @@ const io = Server(expressServer, {
     }
 });
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname)); // Assicurati che il nome del file sia unico
+    }
+});
+
+const upload = multer({ storage: storage });
+
+
+
 io.on('connection', (socket) => {
 	console.log(`Un client si è connesso ${socket.id}`);
 	console.log('[DEBUG] onConnection::sockets - ', sockets);
@@ -55,8 +70,8 @@ io.on('connection', (socket) => {
 		// Aggiungi il socket alla variabile globale
 		sockets[id] = socket;
 		
-		console.log(`[DEBUG] onSetCustomID::sockets[id] - ${sockets[id].customId}`);
-		console.log(`[DEBUG] onSetCustomID::socket.customId - ${socket.customId}`);
+		// console.log(`[DEBUG] onSetCustomID::sockets[id] - ${sockets[id].customId}`);
+		// console.log(`[DEBUG] onSetCustomID::socket.customId - ${socket.customId}`);
 
 	});
 
@@ -704,7 +719,6 @@ app.post('/api/send_message', async (req,res) => {
 		let friend_sessid = await client.query('SELECT session_id FROM Users WHERE id = $1', [receiver_id.rows[0].id]);
 		friend_sessid = friend_sessid.rows[0].session_id;
 		conv_id = conv_id.rows[0].conversation_id;
-		console.log('[DEBUG] api/messages::sockets - ', sockets);
 
 		await sockets[id].emit('update-messages', conv_id);
 		await sockets[friend_sessid].emit('update-messages', conv_id);
@@ -716,6 +730,7 @@ app.post('/api/send_message', async (req,res) => {
 		console.log('[DEBUG} /api/send_message: error', error);
 	}
 });
+
 
 app.post('/api/auth/sessid', async (req,res) => {
 	const {sessid} = req.body;
@@ -732,6 +747,38 @@ app.post('/api/auth/sessid', async (req,res) => {
 
 });
 
+// http://'+IP+':8000/api/convs/'+id+'/remove
+app.post('/api/convs/:id/remove', async (req,res)=>{
+	const sessid = req.params.id;
+	console.log('body in convs::create'+req.body);
+	const conv_id = req.body.conv_id;
+	let user = await getUserBySessID(sessid);
+	
+	if (!user) {
+		return res.status(401).send({
+			status : "Error getting current user"
+		});
+	}
+	//check se la conversazione esiste e io sono un partecipante
+	const check = await client.query('SELECT * FROM Conversation_Participants WHERE user_id = $1 AND conversation_id = $2', [user.id, conv_id]);
+	if(check.rows.length === 0){
+		return res.status(401).send({
+			status : "Error, chat non-existent or user is not a partecipant"
+		});
+	}
+	let friend_id = await client.query('SELECT user_id FROM Conversation_Participants WHERE user_id != $1 AND conversation_id = $2', [user.id, conv_id]);
+	friend_id = friend_id.rows[0].user_id
+	await client.query('DELETE FROM conversations WHERE id=$1', [conv_id]);
+	
+	let friend_sessid = await client.query('SELECT session_id FROM Users WHERE id = $1', [friend_id]);
+	console.log('[DEBUG] api/messages::sockets - ', sockets);
+
+	await sockets[sessid].emit('update-convs', null);
+	await sockets[friend_sessid].emit('update-convs', null);
+	return res.status(201).send({
+		status : 'success'
+	});
+});
 app.post('/api/convs/:id/create', async (req,res) => {
 	const sessid = req.params.id;
 	console.log('body in convs::create'+req.body);
@@ -762,6 +809,12 @@ app.post('/api/convs/:id/create', async (req,res) => {
 		//inserico 2 entry a Conversation Partecipants con id e friend_id
 		await client.query('INSERT INTO Conversation_Participants (conversation_id, user_id) VALUES ($1, $2)', [conv_id.rows[0].id, user.id]);
 		await client.query('INSERT INTO Conversation_Participants (conversation_id, user_id) VALUES ($1, $2)', [conv_id.rows[0].id, friend_id]);
+
+		let friend_sessid = await client.query('SELECT session_id FROM Users WHERE id = $1', [friend_id]);
+		console.log('[DEBUG] api/messages::sockets - ', sockets);
+
+		await sockets[id].emit('update-convs', null);
+		await sockets[friend_sessid].emit('update-convs', null);
 		return res.status(200).send({status : "success"});
 	} catch (error) {
 		console.log('Error during conversation creation', error);
@@ -849,6 +902,18 @@ app.post('/api/reset', async (req,res) => {
 		return res.status(500).send({status : "internal error"});
 	}
 });
+
+
+app.post('/api/profile_pic/:id/add', upload.single('image'), (req, res) => {
+    const id = req.params.id;
+	console.log('body in profile_pic::add'+req.body);
+	if (req.file) {
+        res.status(200).json({ message: 'File uploaded successfully', file: req.file });
+    } else {
+        res.status(400).json({ message: 'File upload failed' });
+    }
+});
+
 
 app.post('/api/forgot', async (req,res) => {
 	const { email} = req.body;
@@ -978,6 +1043,12 @@ app.get('/home', (req,res) => {
 		res.sendFile(path.join(__dirname, 'public/home.html'));
 	}
 	else if (req.headers.referer === 'http://' + IP + ':8000/login'){
+		res.sendFile(path.join(__dirname, 'public/home.html'));
+	}
+	else if (req.headers.referer === 'http://' + IP + ':8000/home.*/'){
+		res.sendFile(path.join(__dirname, 'public/home.html'));
+	}
+	else if (req.headers.referer === 'http://' + IP + ':8000/home'){
 		res.sendFile(path.join(__dirname, 'public/home.html'));
 	}
 	else if (req.headers.referer === 'http://' + IP + ':8000/login?#'){

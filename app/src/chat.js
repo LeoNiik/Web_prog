@@ -1,11 +1,11 @@
 document.addEventListener('DOMContentLoaded', async (event) => {
     assignEventListeners();
-    initSocketConnection();
+    await initSocketConnection();
     await refreshConvs();
     // Apri il popup modale
     ///poroceopces//////
 }); 
-var selectedChat
+var selectedChat = 0;
 const IP = '192.168.1.42';
 const socket = io('ws://'+IP+':8000');
 
@@ -20,9 +20,14 @@ async function initSocketConnection() {
 
 //socket on update aggiorna la chat
 socket.on('update-messages', async (conv_id) => {
-    console.log('update received');
+    console.log('update messages received');
     console.log(conv_id);
     await refreshMessages(conv_id);
+});
+
+socket.on('update-convs', async ()=>{
+    console.log('update conversations received');
+    await refreshConvs();    
 });
 
 
@@ -64,11 +69,15 @@ async function getMessages(conv_id){
 async function refreshMessages(conv_id){
     let id = sessionStorage.getItem('sessid');
     const messageDiv = document.getElementById('messages');
+    const contact_name = document.getElementById('contact-name');
     const messageData = await getMessages(conv_id);
     console.log('[DEBUG] refreshMessages::conv_id'+ conv_id);
     // console.log('[DEBUG] refreshMessages::messageData - '+ JSON.stringify(messageData));
-    if(messageData.status === 'success')
+
+    if(messageData.status === 'success' && selectedChat == conv_id){
         messageDiv.innerHTML = messageData.content;
+    }
+    
 }
 
 async function getContactName(conv_id) {
@@ -207,6 +216,36 @@ async function newChat(friend_id){
     console.log('[DEBUG]newChat()::resData'+ resData);
 }
 
+//consenti di gestire il profilo (per ora solo uploadare immagine profilo)
+/* <div id="popup-profile" class="modal">
+<div class="modal-content">
+    <input type="file" name="image" id="image" accept="image/*" required>
+    <button onclick="uploadProfilePicture()">Upload</button>
+</div>  */
+async function uploadProfilePicture(){
+    const formData = new FormData();
+    const id = sessionStorage.getItem('sessid');
+    const image = document.getElementById('image').files[0];
+    formData.append('image', image);
+
+    console.log('[DEBUG] uploadProfilePicture::formData - ' + formData);
+
+    const response = await fetch('http://'+IP+':8000/api/profile_pic/'+id+'/add', {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (response.ok) {
+        alert('Image uploaded successfully!');
+    } else {
+        alert('Image upload failed!');
+    }
+    
+}
+
+
+
+
 //risolvere problema dei click esponenziali
 function assignEventListeners() {
     newChatListeners();
@@ -217,8 +256,8 @@ function assignEventListeners() {
     searchConvListeners();
     friendModalListeners();
     logoutListeners();
-
-
+    manageProfilePopup();
+    
     
     function newChatListeners(){
         const modal = document.getElementById('popup-newchat');
@@ -249,6 +288,7 @@ function assignEventListeners() {
         });
 
     }
+
     function messageListeners() {
         const messageInput = document.getElementById('new-message');
         const messageOutput = document.getElementById('messages');
@@ -312,6 +352,34 @@ function assignEventListeners() {
             }
         });
     }
+
+
+    //prendi il file dal form e invialo al backend
+    function manageProfilePopup(){
+        const modal = document.getElementById('popup-profile');
+        const manageProfileButton = document.getElementById('manage-profile');
+
+        manageProfileButton.addEventListener('click', function () {
+            // Azione da eseguire quando si clicca sull'icona
+            // Puoi anche aprire il modal per creare una nuova chat, per esempio
+            modal.style.display = 'block';
+        });
+        // Chiudi il modal quando si clicca sulla 'x'
+        const closeButton = modal.querySelector('.close-button');
+        
+        closeButton.addEventListener('click', function () {
+            modal.style.display = 'none';
+        });
+    
+        // Chiudi il modal quando si clicca fuori dalla finestra del modal
+        window.addEventListener('click', function (event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+
+    }
     
     function searchConvListeners(){
         const searchButton = document.getElementById('search-conv');
@@ -336,6 +404,27 @@ function assignEventListeners() {
         });
     }
 }
+
+function deleteConvListeners(){
+    const button = document.querySelector('.del-chat');
+    button.addEventListener('click', (event)=>{
+        let conv_id = button.id;
+        console.log('[DEBUG] deleteConvListeners::conv_id - ' + conv_id);
+        deleteConv(conv_id);
+    });
+}
+
+async function deleteConv(conv_id){
+    let id = sessionStorage.getItem('sessid');
+    const sendData = {
+
+        conv_id : conv_id
+    }
+    let resData = await postRequest('http://'+IP+':8000/api/convs/'+id+'/remove', sendData);
+    chatSelected = 0;
+    closeConv();
+}
+
 function moreOptionsListeners() {
     const dropdownButton = document.getElementById('drop-btn');
     const dropdown = document.getElementById('dropdown');
@@ -425,17 +514,21 @@ async function closeConv(){
     chatSelected.style.display = 'none';
 }
 async function openConv(conv_id){
+
     const name = await getContactName(conv_id);
+    let chatSelected = document.querySelector('.chat-selected');
+    const delButton = chatSelected.querySelector('.del-chat');
+    delButton.id = conv_id;
+    deleteConvListeners();
     // console.log('[DEBUG] openConv::messages -' +  messages.status);
     let nameSpan = document.getElementById('contact-name');
     // const messages = await getMessages(conv_id);
     // let messagesDiv = document.getElementById('messages');
-    let chatSelected = document.querySelector('.chat-selected');
     let chatDefault = document.querySelector('.chat-not-selected');
     
     chatDefault.style.display = 'none';
     chatSelected.style.display = 'flex';
-    
+    selectedChat = conv_id;
     await refreshMessages(conv_id);
     if(name)
         nameSpan.innerText = name.content;

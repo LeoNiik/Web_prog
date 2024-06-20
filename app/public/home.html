@@ -21,6 +21,8 @@
                 <div class="dropdown-content" id="dropdown">
                     <div class="drop-item" id="new-friend"><p>Add new friend</p></div>
                     <div class="drop-item" id="manage-friend"><p>Manage friends</p></div>
+                    <div class="drop-item" id="manage-profile"><p>Manage Profile</p></div>
+
                     <div class="drop-item" id="logout"><p><i class='bx bxs-log-out' ></i>Log out</p></div>
                 </div>
                 <div id="new-chat"><i class="fas fa-pen" ></i></div>
@@ -50,6 +52,16 @@
                 <button type="submit">Crea Chat</button>
             </div>
             
+        </div>
+        <div id="popup-profile" class="modal">
+            <div class="modal-content">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <input type="file" name="image" id="image" accept="image/*" required>
+                    <button type="submit" onclick="uploadProfilePicture()">Upload</button>
+                    <span class="close-button">&times;</span>
+                </form>
+            
+            </div> 
         </div>
         <div id="popup-newfriend" class="modal">
             <div class="modal-content">
@@ -83,9 +95,7 @@
                         <span id="contact-name">fsafas</span>
                         <span class="last-seen">ultimo accesso oggi alle 14:30</span>
                     </div>
-                    <i class="fas fa-video"></i>
-                    <i class="fas fa-phone"></i>
-                    <i class="fas fa-ellipsis-v"></i>
+                    <button class="del-chat">delete this chat!</button>
                 </div>
                 <div class="messages" id="messages">
                     <div id="receiver">
