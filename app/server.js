@@ -19,7 +19,7 @@ const fs = require('fs');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-const IP = '192.168.1.42'; //just for testing
+const IP = '192.168.1.25'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
@@ -192,7 +192,7 @@ app.get("/api/convs/:id", async (req, res) => {
 				</div>\
 				<div class="notification-info">\
 					<span class="time">'+time+'</span>\
-					<span class="notifications">∞你妈+</span>\
+					<span class="notifications">+</span>\
 				</div>\
 			</div>';
 		}
@@ -1019,6 +1019,10 @@ app.post('/upload', async (req, res) => {
 	//const ext = path.extname(image.name);
 	//salvo l' immagine in locale 
     image.mv(__dirname + '/upload/' + image.name);
+
+
+	//redirecto a home
+	res.redirect('http://'+IP+':8000/home');
 
 
     res.sendStatus(200);
