@@ -19,7 +19,7 @@ const fs = require('fs');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-const IP = '192.168.1.25'; //just for testing
+const IP = '192.168.1.43'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
@@ -835,56 +835,57 @@ app.post('/api/convs/:id/search', async (req,res) => {
 	const convName = req.body.convName
 	console.log(convName);
 	try {
+		const user = await getUserBySessID(id);
+		if(!user){
+			//return error
+			return res.status(401).send({status : "User not found"});
+		}
 
-		client.query('SELECT conversation_id,name,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id \
-		JOIN users ON Conversation_Participants.user_id=users.id WHERE session_id = ($1) AND name LIKE ($2)'
-		,[id, convName], (err, result) => {
-			if (err) {
-				console.error('Error executing query', err);
-			}
-			console.log(result);
-			if(result.rows.length === 0){
-				return res.status(401).send(			
-					{status : "error",
-					content : 
-					'<div class="sidebar-entry>"\
-						<p>sNo chat containing '+convName+' </p>\
-					</div>'
-					
-				});
-				return;
-			}
-			//return the conversation as HTML
-			//TODO order the convs by lastUpdate
-			let dinamicContent = '';
-			result.rows.forEach(element => {
-			const {name, updated_at} = element;
+		const result = await client.query('SELECT conversation_id,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON user_id=users.id WHERE users.id != $1 AND username LIKE $2', [user.id, '%'+convName+'%']);
+
+
+		console.log('[DEBUG]/api/convs/:id/search::result - '+ JSON.stringify(result) );
+		if(result.rows.length === 0){
+			return res.status(401).send(			
+				{status : "success",
+				content : 
+				'<div class="sidebar-entry>"\
+					<p>No chat containing '+convName+' </p>\
+				</div>'
+				
+			});
+		}
+		//return the conversation as HTML
+		//TODO order the convs by lastUpdate
+		let dinamicContent = '';
+		for (const element of result.rows) {
+			const {conversation_id, updated_at} = element;
+			console.log('[DEBUG] element:', element);
 			let time = utils.extractTime(updated_at);
-			console.log(name,time);
-			//checko se esiste un'immagine con il nome dell'utente
-			
+			//console.log(conversation_id,time);
+			const convName = await client.query('SELECT * FROM Users JOIN (SELECT user_id FROM Conversation_Participants WHERE conversation_id = $1) on user_id=id WHERE id!=$2', [conversation_id,user.id]);
+			console.log('[DEBUG] convName:', convName.rows);
 			let image_src = `https://via.placeholder.com/40`;
-			if(fs.existsSync(`upload/${name}.png`)){
-				image_src = `http://${IP}:8000/upload/${name}.png`;
-			}
 
+			if(fs.existsSync(`upload/${convName.rows[0].username}.png`)){
+				image_src = `http://${IP}:8000/upload/${convName.rows[0].username}.png`;
+			}
 			dinamicContent += 
-			'<div class="sidebar-entry">\
-				<img src='+ image_src+' alt="Profile Picture" class="profile-pic">\
+			'<div class="sidebar-entry open-conv-btn" id="'+conversation_id+'">\
+				<img src='+image_src+' alt="Profile Picture" class="profile-pic">\
 				<div class="chat-info">\
-					<span class="chat-name">'+name+'</span>\
+					<span class="chat-name">'+ convName.rows[0].username +'</span>\
 				</div>\
 				<div class="notification-info">\
 					<span class="time">'+time+'</span>\
-					<span class="notifications">3</span>\
+					<span class="notifications">+</span>\
 				</div>\
-			</div>'
-			});
-			return res.status(201).send({
-				status : "success",
-				content : dinamicContent
-			});			
-		});
+			</div>';
+		}
+		return res.status(201).send({
+			status : "success",
+			content : dinamicContent
+		});			
 	} catch (error) {
 		console.log('Error in query search', error);
 	}
@@ -1031,6 +1032,25 @@ app.post('/upload', async (req, res) => {
 
     res.sendStatus(200);
 });
+app.get('/profile/:id' , async (req,res) => {
+	const {id} = req.params;
+	const user = await getUserBySessID(id);
+
+	let image_src = `https://via.placeholder.com/40`;
+
+	//checko se esiste un'immagine con il nome dell'utente
+	if(fs.existsSync(`upload/${user.username}.png`)){
+		image_src = `http://${IP}:8000/upload/${user.username}.png`;
+	}
+
+	return res.status(200).send({
+		status : "success",
+		content : user,
+		image : image_src
+	});
+
+});
+
 
 app.get('/verify', async (req,res) => {
 	const token = req.query.token;

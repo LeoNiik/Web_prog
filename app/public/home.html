@@ -19,13 +19,13 @@
         <audio id="notification_audio" src="https://www.soundjay.com/human/sounds/fart-03.mp3" preload="auto"></audio>
         <div class="sidebar-wrapper" id="sidebar">
             <div class="options">
-                <div id="search-conv"><i class="fas fa-search"></i></div>
+                <!-- <div id="search-conv"><i class="fas fa-search"></i></div> -->
                 <input type="text" id="search-bar" placeholder="Cerca...">
                 <div id="drop-btn"><i class="fas fa-ellipsis-h"></i></div>
                 <div class="dropdown-content" id="dropdown">
                     <div class="drop-item" id="new-friend"><p>Add new friend</p></div>
                     <div class="drop-item" id="manage-friend"><p>Manage friends</p></div>
-                    <div class="drop-item" id="manage-profile"><p>Upload profile picture</p></div>
+                    <div class="drop-item" id="manage-profile"><p>Manage Profile</p></div>
 
                     <div class="drop-item" id="logout"><p><i class='bx bxs-log-out' ></i>Log out</p></div>
                 </div>
@@ -47,19 +47,16 @@
         <div id="popup-newchat" class="modal">
             <div class="modal-content">
                 <span class="close-button">&times;</span>
-                <!-- <h2>Nuova Chat</h2>
-                <label for="chat-name">Nome della Chat:</label>
-                <input type="text" id="chat-name" name="chat-name" required>
-                <label for="chat-participants">Partecipanti (separati da virgola):</label> -->
                 <div id="friends-wrapper"></div>
-                
-                <!-- <button type="submit" id="button-new-chat">Crea Chat</button> -->
             </div>
-            
         </div>
         <div id="popup-profile" class="modal">
 
             <div class="modal-content">
+                <!-- displaya il Nome dell' utente -->
+                <img src="https://via.placeholder.com/40" alt="Profile Picture" id="manage-profile-pfp">
+                <label>Username:</label>
+                <b id="profile-name">Nome Utente</b>
                 <div>
                     <label for="profile-pic">Upload your Profile Picture!</label>
                 </div>
@@ -103,11 +100,11 @@
             <div class="chat-not-selected">No chat has been selected</div>
             <div class="chat-selected">
                 <div class="header">
-                    <i class="fas fa-arrow-left"></i>
+                    <i id="close-conv-btn"class="fas fa-arrow-left"></i>
                     <img src="https://via.placeholder.com/40" id="pfp-header" class="profile-pic">
                     <div class="contact-info">
                         <span id="contact-name">fsafas</span>
-                        <span class="last-seen">ultimo accesso oggi alle 14:30</span>
+                        <!-- <span class="last-seen">ultimo accesso oggi alle 14:30</span> -->
                     </div>
                     <button class="del-chat">delete this chat!</button>
                 </div>

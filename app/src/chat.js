@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     ///poroceopces//////
 }); 
 var selectedChat = 0;
-const IP = '192.168.1.25';
+const IP = '192.168.1.43';
 const socket = io('ws://'+IP+':8000');
 
 // Funzione per inizializzare la connessione
@@ -160,9 +160,9 @@ async function searchConv() {
     const sendData = {
         convName : convName
     };
-    const resData = await postRequest(`http://${IP}:8000/convs/${id}/search`, sendData);
+    const resData = await postRequest(`http://${IP}:8000/api/convs/${id}/search`, sendData);
     convDiv = document.getElementById("entries-wrapper");
-
+    console.log('[DEBUG]searchConv()::resData - '+resData)
     if(resData.status === 'success'){
         convDiv.innerHTML = resData.content;
     }
@@ -230,7 +230,7 @@ function assignEventListeners() {
     friendModalListeners();
     logoutListeners();
     manageProfilePopup();
-    
+    closeConvListeners();
     
     function newChatListeners(){
         const modal = document.getElementById('popup-newchat');
@@ -329,9 +329,19 @@ function assignEventListeners() {
 
 
     //prendi il file dal form e invialo al backend
-    function manageProfilePopup(){
+    async function manageProfilePopup(){
         const modal = document.getElementById('popup-profile');
         const manageProfileButton = document.getElementById('manage-profile');
+        
+        const sessid = sessionStorage.getItem('sessid');
+        let res = await getRequest('http://'+IP+':8000/profile/'+sessid);
+        let user = res.content;
+        let username = user.username;
+        
+        let image_src = res.image;
+        
+        let profile_name = document.getElementById('profile-name').innerText = username;
+        let pfp = document.getElementById("manage-profile-pfp").src = image_src;
 
         manageProfileButton.addEventListener('click', function () {
             // Azione da eseguire quando si clicca sull'icona
@@ -446,6 +456,13 @@ function refuseFriendListeners(){
             await acceptFriend(friendname,false);
         });
     
+    });
+}
+function closeConvListeners(){
+    const button = document.getElementById('close-conv-btn');
+    button.addEventListener('click', async (event)=>{
+        console.log('click close conv');
+        closeConv();
     });
 }
 function cancelFriendReqListeners(){
