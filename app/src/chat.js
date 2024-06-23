@@ -23,31 +23,13 @@ socket.on('update-messages', async (conv_id) => {
     console.log('update messages received');
     console.log(conv_id);
     await refreshMessages(conv_id);
+    document.getElementById('notification_audio').play();
 });
 
 socket.on('update-convs', async ()=>{
     console.log('update conversations received');
     await refreshConvs();    
 });
-
-
-
-// function newMessage() {
-//     const input = document.querySelector('#new-message');
-//     if (input.value) {
-//         socket.emit('ciao', input.value)
-//         input.value = ""
-//     }
-//     input.focus()
-//     return;
-//     let data = registerMessage(message);
-//     //forse si puo fare ritornare al backend l ora im modo che glio orari siano piu consistenti
-//     if (message !== '') {
-//         console.log("Messaggio inviato: " + message);
-//         messageInput.value = ''; // Reset campo di input
-//     }
-
-// }
 
 async function getMessages(conv_id){
     let id = sessionStorage.getItem('sessid');
@@ -76,6 +58,11 @@ async function refreshMessages(conv_id){
 
     if(messageData.status === 'success' && selectedChat == conv_id){
         messageDiv.innerHTML = messageData.content;
+    }
+    scrollToBottom();
+    function scrollToBottom() {
+        const scrollableDiv = document.getElementById('messages');
+        scrollableDiv.scrollTop = scrollableDiv.scrollHeight;
     }
     
 }
@@ -163,38 +150,24 @@ function logout() {
     window.location.href = '/login';
 }
 
-function searchConv() {
-    const convName = document.getElementById('search-bar').value;
+async function searchConv() {
+    const convName = document.getElementById('search-bar').value.trim();
+    if(convName=='')
+        refreshConvs();
     let id = sessionStorage.getItem('sessid');
     let sidebar = document.getElementById('entries-wrapper');
 	console.log(convName);
     const sendData = {
-        convName
+        convName : convName
     };
-    const options = {
-        method: 'post',
-        headers: {
-        'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(sendData)
-    };
-    fetch('http://'+IP+':8000/api/convs/'+id+'/search', options)
-    .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        if(data.status === 'success'){
-            //got conversations
-            sidebar.innerHTML = data.content;
-            assignEventListeners();
-        }
-        else{
+    const resData = await postRequest(`http://${IP}:8000/convs/${id}/search`, sendData);
+    convDiv = document.getElementById("entries-wrapper");
 
-            sidebar.innerHTML = data.content;
-            assignEventListeners();
-        }
-    })
-    .catch(error => console.error('Error:', error));
-    return;
+    if(resData.status === 'success'){
+        convDiv.innerHTML = resData.content;
+    }
+    openConvListeners();
+    
 }
 //prendo in input il nome dell' utente della chat e chiedo al backend la chat
 
@@ -222,26 +195,26 @@ async function newChat(friend_id){
     <input type="file" name="image" id="image" accept="image/*" required>
     <button onclick="uploadProfilePicture()">Upload</button>
 </div>  */
-async function uploadProfilePicture(){
-    const formData = new FormData();
-    const id = sessionStorage.getItem('sessid');
-    const image = document.getElementById('image').files[0];
-    formData.append('image', image);
+// async function uploadProfilePicture(){
+//     const formData = new FormData();
+//     const id = sessionStorage.getItem('sessid');
+//     const image = document.getElementById('image').files[0];
+//     formData.append('image', image);
 
-    console.log('[DEBUG] uploadProfilePicture::formData - ' + formData);
+//     console.log('[DEBUG] uploadProfilePicture::formData - ' + formData);
 
-    const response = await fetch('http://'+IP+':8000/api/profile_pic/'+id+'/add', {
-        method: 'POST',
-        body: formData,
-    });
+//     const response = await fetch('http://'+IP+':8000/api/profile_pic/'+id+'/add', {
+//         method: 'POST',
+//         body: formData,
+//     });
 
-    if (response.ok) {
-        alert('Image uploaded successfully!');
-    } else {
-        alert('Image upload failed!');
-    }
+//     if (response.ok) {
+//         alert('Image uploaded successfully!');
+//     } else {
+//         alert('Image upload failed!');
+//     }
     
-}
+// }
 
 
 
@@ -297,6 +270,7 @@ function assignEventListeners() {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 newMessage();
+
             }
         
         });
@@ -377,14 +351,14 @@ function assignEventListeners() {
                 modal.style.display = 'none';
             }
         });
-
-
     }
+
+
     
     function searchConvListeners(){
-        const searchButton = document.getElementById('search-conv');
-        searchButton.addEventListener('click', () => {
-            console.log('click search');    
+        const searchButton = document.getElementById('search-bar');
+        searchButton.addEventListener('input', () => {
+            console.log('input search');    
             searchConv();
         });
     }
@@ -521,17 +495,36 @@ async function openConv(conv_id){
     delButton.id = conv_id;
     deleteConvListeners();
     // console.log('[DEBUG] openConv::messages -' +  messages.status);
+    let pfp = document.getElementById('pfp-header');
     let nameSpan = document.getElementById('contact-name');
     // const messages = await getMessages(conv_id);
     // let messagesDiv = document.getElementById('messages');
     let chatDefault = document.querySelector('.chat-not-selected');
+    pfp.src = `http://${IP}:8000/upload/${name.content}.png`
+    const resStatus = await checkPfp(pfp.src)
     
+
+    //se la risposta e' 404 allora metti l'immagine di default
+    if (resStatus === 404) {
+        pfp.src = 'https://via.placeholder.com/40';
+    }
+
     chatDefault.style.display = 'none';
     chatSelected.style.display = 'flex';
     selectedChat = conv_id;
     await refreshMessages(conv_id);
     if(name)
         nameSpan.innerText = name.content;
+}
+async function checkPfp(url){
+    const options = {
+        method: 'GET',
+        headers: {
+        'Content-Type': 'application/json'
+        }
+    };
+    const response = await fetch(url, options);
+    return response.status
 }
 async function removeFriend(friend_id) {
     //prendo l id dell amico

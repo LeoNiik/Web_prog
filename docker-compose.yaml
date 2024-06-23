@@ -16,6 +16,8 @@ services:
       - appnetwork
   app:
     build: ./app
+    volumes:
+      - ./upload:/usr/src/app/upload  
     ports:
       - "8000:80"
     expose:

@@ -1,6 +1,7 @@
 'use strict';
 const path = require('path');
 const express = require('express');
+const fileUpload = require('express-fileupload');
 const { Client } = require('pg');
 var bodyParser = require('body-parser')
 const { createHash } = require('crypto');
@@ -8,6 +9,7 @@ const utils = require('./utils');
 const Server = require('socket.io');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
+const fs = require('fs');
 
 
 
@@ -27,6 +29,8 @@ const client = new Client({
 	database: 'esempio',
 });
 
+
+
 client
 .connect()
 .then(() => {
@@ -43,21 +47,11 @@ const expressServer = app.listen(PORT, HOST);
 let sockets = {};
 const io = Server(expressServer, {
     cors: {
-        origin: process.env.NODE_ENV === "production" ? false : ['http://${IP}:8000', 'http://localhost:8000' , "http://127.0.0.1:8000"]
+        origin: process.env.NODE_ENV === "production" ? false : [`http://${IP}:8000`, 'http://localhost:8000' , "http://127.0.0.1:8000"]
     }
 });
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname)); // Assicurati che il nome del file sia unico
-    }
-});
-
-const upload = multer({ storage: storage });
-
+app.use(fileUpload());
 
 
 io.on('connection', (socket) => {
@@ -80,8 +74,9 @@ io.on('connection', (socket) => {
 	  console.log(`Client ${socket.customId} si è disconnesso`);
 	  delete sockets[socket.customId]; // Rimuovi il socket dalla variabile globale
 	});
-  });
+});
 
+app.use(express.static('upload'))
 app.use(express.static('public'));
 app.use(express.static('src'));
 // parse application/x-www-form-urlencoded
@@ -111,7 +106,7 @@ const transporter = nodemailer.createTransport({
 	  user: process.env.EMAIL,
 	  pass: process.env.EMAIL_PASS
 	},
-  });
+});
 
 //send mail given the email and the message
 const sendEmail = (to, subject, text) => {
@@ -129,7 +124,7 @@ const sendEmail = (to, subject, text) => {
 	  }
 	  console.log('Email sent:', info.response);
 	});
-  };
+};
   
 
 
@@ -184,9 +179,14 @@ app.get("/api/convs/:id", async (req, res) => {
 			//console.log(conversation_id,time);
 			const convName = await client.query('SELECT * FROM Users JOIN (SELECT user_id FROM Conversation_Participants WHERE conversation_id = $1) on user_id=id WHERE id!=$2', [conversation_id,user.id]);
 			console.log('[DEBUG] convName:', convName.rows);
+			let image_src = `https://via.placeholder.com/40`;
+
+			if(fs.existsSync(`upload/${convName.rows[0].username}.png`)){
+				image_src = `http://${IP}:8000/upload/${convName.rows[0].username}.png`;
+			}
 			dinamicContent += 
 			'<div class="sidebar-entry open-conv-btn" id="'+conversation_id+'">\
-				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+				<img src='+image_src+' alt="Profile Picture" class="profile-pic">\
 				<div class="chat-info">\
 					<span class="chat-name">'+ convName.rows[0].username +'</span>\
 				</div>\
@@ -353,12 +353,17 @@ app.get("/api/friends/:id", async (req, res) => {
 		//return the conversation as HTML
 		result.rows.forEach(element => {
 
+			let image_src = `https://via.placeholder.com/40`;
+			if(fs.existsSync(`upload/${element.username}.png`)){
+				image_src = `http://${IP}:8000/upload/${element.username}.png`;
+			}
+
 			console.log(element.username);
 			dinamicContent += '<div class="friend-entry"><p>'+element.username+'</p>\
 			<button id='+element.id+' class="rmfriend-btn">remove</button></div>'; 
 			// un div per ogni amico con un bottone remove
 			writeToContent +=  '<div class="write-to-entry" id="'+element.id+'">\
-			<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+			<img src='+image_src+' alt="Profile Picture" class="profile-pic">\
 			<div class="chat-info">\
 				<span class="chat-name">'+element.username+'</span>\
 			</div>\
@@ -771,6 +776,7 @@ app.post('/api/convs/:id/remove', async (req,res)=>{
 	await client.query('DELETE FROM conversations WHERE id=$1', [conv_id]);
 	
 	let friend_sessid = await client.query('SELECT session_id FROM Users WHERE id = $1', [friend_id]);
+	friend_sessid = friend_sessid.rows[0].session_id
 	console.log('[DEBUG] api/messages::sockets - ', sockets);
 
 	await sockets[sessid].emit('update-convs', null);
@@ -811,9 +817,11 @@ app.post('/api/convs/:id/create', async (req,res) => {
 		await client.query('INSERT INTO Conversation_Participants (conversation_id, user_id) VALUES ($1, $2)', [conv_id.rows[0].id, friend_id]);
 
 		let friend_sessid = await client.query('SELECT session_id FROM Users WHERE id = $1', [friend_id]);
+		friend_sessid = friend_sessid.rows[0].session_id
+
 		console.log('[DEBUG] api/messages::sockets - ', sockets);
 
-		await sockets[id].emit('update-convs', null);
+		await sockets[sessid].emit('update-convs', null);
 		await sockets[friend_sessid].emit('update-convs', null);
 		return res.status(200).send({status : "success"});
 	} catch (error) {
@@ -853,10 +861,16 @@ app.post('/api/convs/:id/search', async (req,res) => {
 			const {name, updated_at} = element;
 			let time = utils.extractTime(updated_at);
 			console.log(name,time);
+			//checko se esiste un'immagine con il nome dell'utente
 			
+			let image_src = `https://via.placeholder.com/40`;
+			if(fs.existsSync(`upload/${name}.png`)){
+				image_src = `http://${IP}:8000/upload/${name}.png`;
+			}
+
 			dinamicContent += 
 			'<div class="sidebar-entry">\
-				<img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">\
+				<img src='+ image_src+' alt="Profile Picture" class="profile-pic">\
 				<div class="chat-info">\
 					<span class="chat-name">'+name+'</span>\
 				</div>\
@@ -901,17 +915,6 @@ app.post('/api/reset', async (req,res) => {
 		console.error('Errore durante il reset password:', error);
 		return res.status(500).send({status : "internal error"});
 	}
-});
-
-
-app.post('/api/profile_pic/:id/add', upload.single('image'), (req, res) => {
-    const id = req.params.id;
-	console.log('body in profile_pic::add'+req.body);
-	if (req.file) {
-        res.status(200).json({ message: 'File uploaded successfully', file: req.file });
-    } else {
-        res.status(400).json({ message: 'File upload failed' });
-    }
 });
 
 
@@ -994,6 +997,32 @@ app.post('/api/signup', async (req, res) => {
 	}	
 });
 
+app.post('/upload', async (req, res) => {
+    const image  = req.files.image;
+	const id = req.body.sessid;
+
+	console.log(image);
+	console.log(req.body.sessid);
+
+    if (!image) return res.sendStatus(400);
+
+    // If doesn't have image mime type prevent from uploading
+    //if (!/^image/.test(image.mimetype)) return res.sendStatus(400);
+
+	const user = await getUserBySessID(id);
+	
+
+	//rinomino l' immagine con il sessid dell' utente
+	console.log("[DEBUG] /upload image: " + JSON.stringify(image.name));
+	image.name = user.username + path.extname(image.name);
+	//retrivo l'estensione dell' immagine
+	//const ext = path.extname(image.name);
+	//salvo l' immagine in locale 
+    image.mv(__dirname + '/upload/' + image.name);
+
+
+    res.sendStatus(200);
+});
 
 app.get('/verify', async (req,res) => {
 	const token = req.query.token;
@@ -1036,6 +1065,12 @@ app.get('/signup', (req,res) => {
 app.get('/easter_egg', (req,res) => {
 	res.redirect('https://www.youtube.com/watch?v=2HKbbDukbJE&list=RD2HKbbDukbJE');
 });
+
+app.get('/upload/:name', (req,res) => {
+	const {name} = req.params;
+	res.sendFile(path.join(__dirname, 'upload/'+name));
+});
+
 
 app.get('/home', (req,res) => {
 	//se la richiesta arriva da /api/auth/sessid  o /login accetta, altrimenti redirecta in no_auth

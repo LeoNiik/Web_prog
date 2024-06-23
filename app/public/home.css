@@ -54,6 +54,8 @@ body {
 .profile-pic {
     border-radius: 50%;
     margin-right: 10px;
+    max-width: 40px;
+    max-height: 40px;
 }
 
 .chat-info {

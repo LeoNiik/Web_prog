@@ -13,6 +13,9 @@
 </head>
 <body>
     <div class="container">
+        <!-- <audio id="notification_audio" src="https://commondatastorage.googleapis.com/codeskulptor-assets/Evillaugh.ogg" preload="auto"></audio> -->
+        <!-- <audio id="notification_audio" src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/alien_shoot.wav" preload="auto"></audio> -->
+        <audio id="notification_audio" src="https://www.soundjay.com/human/sounds/fart-03.mp3" preload="auto"></audio>
         <div class="sidebar-wrapper" id="sidebar">
             <div class="options">
                 <div id="search-conv"><i class="fas fa-search"></i></div>
@@ -55,12 +58,18 @@
         </div>
         <div id="popup-profile" class="modal">
             <div class="modal-content">
-                <form id="uploadForm" enctype="multipart/form-data">
-                    <input type="file" name="image" id="image" accept="image/*" required>
-                    <button type="submit" onclick="uploadProfilePicture()">Upload</button>
+                <form action="/upload" method="POST" enctype="multipart/form-data">
+
+                    <!-- put sessid in the form along with the image -->
+                    <input type="hidden" name="sessid" id="form-image-sessid" value="">
+                    <script>
+                        var sessid = sessionStorage.getItem("sessid");
+                        document.getElementById("form-image-sessid").value = sessid;
+                    </script>
                     <span class="close-button">&times;</span>
+                    <input type="file" name="image" />
+                    <button type="submit">Upload</button>
                 </form>
-            
             </div> 
         </div>
         <div id="popup-newfriend" class="modal">
@@ -86,11 +95,11 @@
             </div>
         </div>
         <div class="chat-wrapper">
-            <div class="chat-not-selected">Porcodii</div>
+            <div class="chat-not-selected">No chat has been selected</div>
             <div class="chat-selected">
                 <div class="header">
                     <i class="fas fa-arrow-left"></i>
-                    <img src="https://via.placeholder.com/40" alt="Profile Picture" class="profile-pic">
+                    <img src="https://via.placeholder.com/40" id="pfp-header" class="profile-pic">
                     <div class="contact-info">
                         <span id="contact-name">fsafas</span>
                         <span class="last-seen">ultimo accesso oggi alle 14:30</span>
