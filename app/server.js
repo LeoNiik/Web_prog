@@ -958,6 +958,10 @@ app.post('/api/signup', async (req, res) => {
 
 	try {
 
+		//checko se l' username contiene spazi
+		if (username.includes(' ')){
+			return res.status(401).send({status : "Username cannot contains spaces"});
+		}
 
 		let clicked = false;
 		//crea un handler per il link

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello, World!</title>
+    <title>GigaChat</title>
+    <link rel="icon" type="image/x-icon" href="/upload/massimo_boldi.ico">
     <link rel="stylesheet" href="home.css">
     <!-- <script src="prova.js"></script> -->
     <script src="../socket.io/socket.io.js"></script>
@@ -24,7 +25,7 @@
                 <div class="dropdown-content" id="dropdown">
                     <div class="drop-item" id="new-friend"><p>Add new friend</p></div>
                     <div class="drop-item" id="manage-friend"><p>Manage friends</p></div>
-                    <div class="drop-item" id="manage-profile"><p>Manage Profile</p></div>
+                    <div class="drop-item" id="manage-profile"><p>Upload profile picture</p></div>
 
                     <div class="drop-item" id="logout"><p><i class='bx bxs-log-out' ></i>Log out</p></div>
                 </div>
@@ -46,18 +47,22 @@
         <div id="popup-newchat" class="modal">
             <div class="modal-content">
                 <span class="close-button">&times;</span>
-                <h2>Nuova Chat</h2>
+                <!-- <h2>Nuova Chat</h2>
                 <label for="chat-name">Nome della Chat:</label>
                 <input type="text" id="chat-name" name="chat-name" required>
-                <label for="chat-participants">Partecipanti (separati da virgola):</label>
+                <label for="chat-participants">Partecipanti (separati da virgola):</label> -->
                 <div id="friends-wrapper"></div>
                 
-                <button type="submit">Crea Chat</button>
+                <!-- <button type="submit" id="button-new-chat">Crea Chat</button> -->
             </div>
             
         </div>
         <div id="popup-profile" class="modal">
+
             <div class="modal-content">
+                <div>
+                    <label for="profile-pic">Upload your Profile Picture!</label>
+                </div>
                 <form action="/upload" method="POST" enctype="multipart/form-data">
 
                     <!-- put sessid in the form along with the image -->
@@ -67,8 +72,8 @@
                         document.getElementById("form-image-sessid").value = sessid;
                     </script>
                     <span class="close-button">&times;</span>
-                    <input type="file" name="image" />
-                    <button type="submit">Upload</button>
+                    <input type="file" name="image"  class ="browse-image-button"/>
+                    <button type="submit" class="upload-image-button">Upload</button>
                 </form>
             </div> 
         </div>
@@ -78,7 +83,7 @@
                 <h2>Add a new friend</h2>
                 <label for="friend-name">Insert username:</label>
                 <input type="text" id="friend-name" name="friend-name" required> 
-                <button id="sub-friend">Crea Chat</button>
+                <button id="sub-friend" class="sub-friend-button">Crea Chat</button>
                 <label id="res-friend"></label>               
             </div>
             
@@ -115,10 +120,12 @@
                     </div>
                 </div>
                 <div class="footer">
-                    <i class="fas fa-smile"></i>
+                    <!-- <i class="fas fa-smile"></i> -->
                     <input type="text" id="new-message" placeholder="Scrivi un messaggio...">
-                    <i class="fas fa-paperclip"></i>
-                    <i class="fas fa-microphone"></i>
+                    <button class="send-message-button" onclick="newMessage()">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                    <!-- <i class="fas fa-microphone"></i> -->
                 </div>
             </div>
         </div>

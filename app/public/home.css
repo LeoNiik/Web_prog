@@ -419,6 +419,18 @@ body {
 #pending .acc-btn:hover {
     background-color: #1da955;
 }
+
+#pending .ref-btn {
+    background-color: #b21d1d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#pending .ref-btn:hover {
+    background-color: #8c1a1a;
+}
 #active-friends button {
     background-color: #b21d1d;
     color: white;
@@ -475,4 +487,40 @@ body {
     display:none;
     width: 100%;
     height: 100%;
+}
+
+.sub-friend-button {
+    background-color: #25d366;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.del-chat{
+    background-color: #b21d1d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.upload-image-button {
+    background-color: #25d366;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.browse-image-button {
+    background-color: #25d366;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
 }
