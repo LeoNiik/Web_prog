@@ -19,7 +19,7 @@ const fs = require('fs');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-const IP = '192.168.222.208'; //just for testing
+const IP = '192.168.194.138'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
@@ -658,9 +658,14 @@ app.post('/api/messages', async (req,res) => {
 			const {content, timestamp,username} = element;
 			let time = utils.extractTime(timestamp);
 			// console.log(content,time);
+			let padding = 'style = "position:relative; left:10px;"';
 			
+			if (username === user.username){
+				padding = 'style = "position:relative; left:800px;"';
+				
+			}
 			dinamicContent += 
-			'<div class="message">\
+			'<div class="message" '+padding+' >\
 				<div class="message-content">\
 					<p>'+username+ ' : ' +  content + ' </p>\
 				</div>\
@@ -945,7 +950,7 @@ app.post('/api/forgot', async (req,res) => {
 		const link = 'http://' + IP + ':8000/reset_psw.html?token='+user.rows[0].verify_token;
 
 		//invio email
-		sendEmail(email, 'Reset your password', 'Hi Mr. ' + user.rows[0].username + 'to reset your password click on the link: '+ link);
+		sendEmail(email, 'Reset your password', 'Hi Mr. ' + user.rows[0].username + '.\n\n\nTo reset your password click on the link: '+ link);
 	
 		return res.status(200).send({status : "success"});
 	} catch (error) {

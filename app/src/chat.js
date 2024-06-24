@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     ///poroceopces//////
 }); 
 var selectedChat = 0;
-const IP = '192.168.222.208';
+const IP = '192.168.194.138';
 const socket = io('ws://'+IP+':8000');
 
 // Funzione per inizializzare la connessione
