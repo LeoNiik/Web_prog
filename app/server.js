@@ -19,7 +19,7 @@ const fs = require('fs');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-const IP = '192.168.1.43'; //just for testing
+const IP = '192.168.222.208'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
@@ -725,8 +725,10 @@ app.post('/api/send_message', async (req,res) => {
 		friend_sessid = friend_sessid.rows[0].session_id;
 		conv_id = conv_id.rows[0].conversation_id;
 
-		await sockets[id].emit('update-messages', conv_id);
-		await sockets[friend_sessid].emit('update-messages', conv_id);
+		if(sockets[id])
+			await sockets[id].emit('update-messages', conv_id);
+		if(sockets[friend_sessid])
+			await sockets[friend_sessid].emit('update-messages', conv_id);
 
 		return res.status(200).send({
 			status : "success"
@@ -779,8 +781,12 @@ app.post('/api/convs/:id/remove', async (req,res)=>{
 	friend_sessid = friend_sessid.rows[0].session_id
 	console.log('[DEBUG] api/messages::sockets - ', sockets);
 
-	await sockets[sessid].emit('update-convs', null);
-	await sockets[friend_sessid].emit('update-convs', null);
+	if(sockets[sessid])
+		await sockets[sessid].emit('update-convs', conv_id);
+	if(sockets[friend_sessid])
+		await sockets[friend_sessid].emit('update-convs', conv_id);
+
+
 	return res.status(201).send({
 		status : 'success'
 	});
@@ -821,8 +827,10 @@ app.post('/api/convs/:id/create', async (req,res) => {
 
 		console.log('[DEBUG] api/messages::sockets - ', sockets);
 
-		await sockets[sessid].emit('update-convs', null);
-		await sockets[friend_sessid].emit('update-convs', null);
+		if(sockets[sessid])
+			await sockets[sessid].emit('update-convs', conv_id);
+		if(sockets[friend_sessid])
+			await sockets[friend_sessid].emit('update-convs', conv_id);
 		return res.status(200).send({status : "success"});
 	} catch (error) {
 		console.log('Error during conversation creation', error);

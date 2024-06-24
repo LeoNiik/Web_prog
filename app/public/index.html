@@ -5,10 +5,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+  <script src="resp.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
-  <!-- Link per le icone fontawesome.min.css">   -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
@@ -23,8 +23,8 @@
         <i class="fa fa-times-circle" onclick="hideMenu()"></i>
         <ul>
           <li><a href="#">HOME</a></li>
-          <li><a href="#servizi">SERVIZI</a></li>
-          <li><a href="#about">ABOUT</a></li>
+          <li><a href="#servizi" onclick="hideMenu()">SERVIZI</a></li>
+          <li><a href="#about" onclick="hideMenu()">ABOUT</a></li>
           <li><a href="signup">SIGN UP</a></li>
           <li><a href="login">LOGIN</a></li>
           <li><a href="home">CHAT</a></li>
@@ -89,7 +89,7 @@
   <a id="about"><h1>About us</h1></a>
   <div class="row">
       <div class="col">
-        <img src="./images/WhatsApp-IA.jpg">
+        <img src="./images/foto_leonardo.jpeg" class="fotoNoi">
       </div>
       <div class="col">
         <h1>Leonardo</h1>
@@ -106,12 +106,12 @@
       ma anche documenti di diverso formato con altre persone.</p>
     </div>
     <div class="col">
-      <img src="./images/WhatsApp-IA.jpg">
+      <img src="./images/foto_jacopo.jpeg" class="fotoNoi">
     </div>
   </div>
   <div class="row">
     <div class="col">
-        <img src="./images/WhatsApp-IA.jpg">
+        <img src="./images/foto_io.jpeg" class="fotoNoi">
     </div>
     <div class="col">
       <h1>Nicolò</h1>
@@ -123,27 +123,10 @@
   
 </section>
 
-<!-- JavaScript for Toggle Menu -->
-
-<script>
-
-  var navBar = document.getElementById("navBar");
-
-  function showMenu(){
-    navBar.style.right = "0";
-  }
-
-  function hideMenu(){
-    navBar.style.right = "-200px";
-  }
-
-
-</script>
-
 <!-- Footer  -->
 
 <section class="footer">
-  <h4>Titolo del footer</h4>
+  <h4>Contatti:</h4>
   <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas sed felis posuere, luctus nunc id, consequat metus.</p>  
 </section>
 
