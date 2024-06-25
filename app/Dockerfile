@@ -12,7 +12,8 @@ RUN npm install
 # If you are building your code for production
 # RUN npm ci --only=production
 ENV EMAIL='francolama21@gmail.com'
-ENV EMAIL_PASS='lqrc wlaz stht fgnp' 
+ENV EMAIL_PASS='lqrc wlaz stht fgnp'
+ENV DB_PASSWORD='password' 
 # Bundle app source
 COPY . .
 

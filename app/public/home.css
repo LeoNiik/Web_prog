@@ -292,6 +292,13 @@ body {
 
 }
 
+#new-name-status {
+    display: block;
+    width: 100%;
+    min-height: 16px;
+    font-size: 14px;
+}
+
 .input-box i {
     position: absolute;
     top: 50%;
@@ -638,7 +645,7 @@ body {
 
 #description-profile {
     text-align: center;
-    margin: 20px 0;
+    margin: 20px;
     display: flex;
     align-items: inherit;
 }
@@ -649,6 +656,8 @@ body {
 }
 
 #profile-name {
+
+    padding: 20px 0px;
     font-size: 18px;
     color: #555;
     margin: 10px 0;

@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     ///poroceopces//////
 }); 
 var selectedChat = 0;
-const IP = '192.168.1.42';
+const IP = '192.168.1.25';
 const socket = io('ws://'+IP+':8000');
 
 // Funzione per inizializzare la connessione
@@ -337,15 +337,7 @@ function assignEventListeners() {
         const modal = document.getElementById('popup-profile');
         const manageProfileButton = document.getElementById('manage-profile');
         
-        const sessid = sessionStorage.getItem('sessid');
-        let res = await getRequest('http://'+IP+':8000/profile/'+sessid);
-        let user = res.content;
-        let username = user.username;
-        
-        let image_src = res.image;
-        
-        let profile_name = document.getElementById('profile-name').innerText = username;
-        let pfp = document.getElementById("manage-profile-pfp").src = image_src;
+        refreshProfile();
 
         manageProfileButton.addEventListener('click', function () {
             // Azione da eseguire quando si clicca sull'icona
@@ -552,12 +544,19 @@ function changeNameListeners(){
 }
 async function changeName() {
     const name = document.getElementById('new-name').value;
+    console.log('[DEBUG] changeName::name - ' + name)
     const id = sessionStorage.getItem('sessid');
     const sendData = {
         name : name
     };
     const resData = await postRequest('http://'+IP+':8000/api/change_name/'+id, sendData);
     console.log(resData);
+    let resLabel = document.getElementById('new-name-status')
+    if(resData.status === 'success'){
+        resLabel.innerText = resData.content;
+        refreshProfile()
+    }
+
 }
 async function closeConv(){
     //pprocido
@@ -651,6 +650,17 @@ async function getSentRequests(){
     const data = await getRequest('http://' + IP + ':8000/api/friends/' + id +'/sent');
     console.log(data);
     return data;
+}
+async function refreshProfile() {
+    const sessid = sessionStorage.getItem('sessid');
+    let res = await getRequest('http://'+IP+':8000/profile/'+sessid);
+    let user = res.content;
+    let username = user.username;
+    
+    let image_src = res.image;
+    
+    let profile_name = document.getElementById('profile-name').innerText = username;
+    let pfp = document.getElementById("manage-profile-pfp").src = image_src;
 }
 async function refreshFriends(){
     let pendingData = await getPendingRequests();

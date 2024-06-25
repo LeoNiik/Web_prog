@@ -1,12 +1,12 @@
 -- Crea il database
-CREATE DATABASE esempio;
+CREATE DATABASE gigachat;
 
 -- Connetti al database appena creato
-\c esempio;
+\c gigachat;
 
-DROP SCHEMA IF EXISTS prova;
-CREATE SCHEMA prova;
-SET search_path to prova;
+DROP SCHEMA IF EXISTS chatschema;
+CREATE SCHEMA chatschema;
+SET search_path to chatschema;
 
 DROP TABLE IF EXISTS Users;
 

@@ -19,14 +19,14 @@ const fs = require('fs');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-const IP = '192.168.1.42'; //just for testing
+const IP = '192.168.1.25'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
-	password: 'password',
+	password: process.env.DB_PASSWORD,
 	host: '172.25.0.1',
 	port: 5433,
-	database: 'esempio',
+	database: 'gigachat',
 });
 
 
@@ -40,7 +40,7 @@ client
 	console.error('Error connecting to PostgreSQL database', err);
 });
 //setting search_path
-client.query('SET search_path to prova');
+client.query('SET search_path to chatschema');
 
 const app = express();
 const expressServer = app.listen(PORT, HOST);
@@ -489,16 +489,32 @@ app.get("/api/friends/:id/sent", async (req, res) => {
 
 app.post('/api/change_name/:id', async (req,res) => {
 	const sessid = req.params.id;
-	const {newname} = req.body;
+	console.log('[DEBUG] /api/change_name::req.body - '+ req.body.name);
+	const newname = req.body.name;
 	try {
 		const user = await getUserBySessID(sessid);
 		if(!user){
-			return res.status(401).send({status : "User not found"});
+			return res.status(401).send({status : "error"});
+		}
+		//checko se il nuovo nome contiene spazi
+		if(newname.includes(' ')){
+			return res.status(401).send({status : "success", content : 'Username cannot contain spaces'});
+		}
+		//checko se esiste gia' un utente con lo stesso nome
+		const check = await client.query('SELECT * FROM Users WHERE username = $1', [newname]);
+		if(check.rows.length != 0){
+			return res.status(401).send({status : "success", content : "Username already taken"});
+		}
+		//cambio il nome dell' immagine profilo se esiste
+		if(fs.existsSync(`upload/${user.username}.png`)){
+			fs.rename(`upload/${user.username}.png`, `upload/${newname}.png`, function(err) {
+				if ( err ) console.log('ERROR: ' + err);
+			});
 		}
 		await client.query('UPDATE Users SET username = $1 WHERE id = $2', [newname, user.id]);
-		return res.status(201).send({status : "success"});
+		return res.status(201).send({status : "success", content : 'Username Succesfully updated'});
 	} catch (error) {
-		console.log('Error during change name query');
+		console.error('Error during change name query: ', error);
 	}
 });
 
@@ -1167,14 +1183,9 @@ app.get('/home', (req,res) => {
 	else if (req.headers.referer === 'http://' + IP + ':8000/login'){
 		res.sendFile(path.join(__dirname, 'public/home.html'));
 	}
-	else if (req.headers.referer === 'http://' + IP + ':8000/home.*/'){
-		res.sendFile(path.join(__dirname, 'public/home.html'));
-	}
 	else if (req.headers.referer === 'http://' + IP + ':8000/home'){
-		res.sendFile(path.join(__dirname, 'public/home.html'));
-	}
-	else if (req.headers.referer === 'http://' + IP + ':8000/login?#'){
-		res.sendFile(path.join(__dirname, 'public/home.html'));
+		//redirecto a http://' + IP + ':8000/api/auth/sessid
+		res.redirect('http://' + IP + ':8000/api/auth/sessid');
 	}
 	else{
 		res.sendFile(path.join(__dirname, 'public/no_auth.html'));

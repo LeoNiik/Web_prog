@@ -6,7 +6,6 @@
     <title>GigaChat</title>
     <link rel="icon" type="image/x-icon" href="/upload/massimo_boldi.ico">
     <link rel="stylesheet" href="home.css">
-    <!-- <script src="prova.js"></script> -->
     <script src="../socket.io/socket.io.js"></script>
     <script src="chat.js"></script>
     <!-- Link per icone -->
@@ -105,8 +104,8 @@
                     <i class="fa fa-smile-o user clickable"></i>
                     <input type="text" id="new-name" placeholder="Insert new username" required>
                 </div> 
-                <button id="sub-change" class="sub-friend-button">Crea Chat</button>
-                <label id="res-friend"></label>               
+                <label id="new-name-status"></label>
+                <button id="sub-change-username" class="sub-friend-button" onclick="changeName()">Change Username</button>
             </div>
         </div>
         <div id="popup-manager" class="modal">
