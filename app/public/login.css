@@ -196,11 +196,6 @@ nav .fa {
     color: orange;
 }
 
-.input-box i.pwd_hide {
-    right: 0;
-    font-size: 18px;
-}
-
 .option_field {
     margin-top: 14px;
     display: flex;

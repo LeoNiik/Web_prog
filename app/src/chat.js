@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     ///poroceopces//////
 }); 
 var selectedChat = 0;
-const IP = '192.168.194.138';
+const IP = '192.168.1.42';
 const socket = io('ws://'+IP+':8000');
 
 // Funzione per inizializzare la connessione
@@ -26,8 +26,11 @@ socket.on('update-messages', async (conv_id) => {
     document.getElementById('notification_audio').play();
 });
 
-socket.on('update-convs', async ()=>{
+socket.on('update-convs', async (conv_id)=>{
     console.log('update conversations received');
+    if (selectedChat == conv_id) {
+        closeConv();
+    }
     await refreshConvs();    
 });
 
@@ -231,6 +234,7 @@ function assignEventListeners() {
     logoutListeners();
     manageProfilePopup();
     closeConvListeners();
+    changeNamePop();
     
     function newChatListeners(){
         const modal = document.getElementById('popup-newchat');
@@ -362,6 +366,29 @@ function assignEventListeners() {
             }
         });
     }
+    async function changeNamePop(){
+        const modal = document.getElementById('popup-changename');
+        const manageProfileButton = document.getElementById('change-name-btn');
+        
+        manageProfileButton.addEventListener('click', function () {
+            // Azione da eseguire quando si clicca sull'icona
+            // Puoi anche aprire il modal per creare una nuova chat, per esempio
+            modal.style.display = 'block';
+        });
+        // Chiudi il modal quando si clicca sulla 'x'
+        const closeButton = modal.querySelector('.close-button');
+        
+        closeButton.addEventListener('click', function () {
+            modal.style.display = 'none';
+        });
+    
+        // Chiudi il modal quando si clicca fuori dalla finestra del modal
+        window.addEventListener('click', function (event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
 
 
     
@@ -391,22 +418,29 @@ function assignEventListeners() {
 
 function deleteConvListeners(){
     const button = document.querySelector('.del-chat');
-    button.addEventListener('click', (event)=>{
+    button.addEventListener('click', async (event)=>{
         let conv_id = button.id;
         console.log('[DEBUG] deleteConvListeners::conv_id - ' + conv_id);
-        deleteConv(conv_id);
+        let media = window.innerWidth <= 950
+
+        if(media){
+            toggleSidebar();
+            await sleep(400);
+        }
+        await deleteConv(conv_id);
     });
 }
 
 async function deleteConv(conv_id){
     let id = sessionStorage.getItem('sessid');
     const sendData = {
-
         conv_id : conv_id
     }
     let resData = await postRequest('http://'+IP+':8000/api/convs/'+id+'/remove', sendData);
+    console.log('[DEBUG] deleteConv::resData - '+ resData);
     chatSelected = 0;
     closeConv();
+
 }
 
 function moreOptionsListeners() {
@@ -462,6 +496,12 @@ function closeConvListeners(){
     const button = document.getElementById('close-conv-btn');
     button.addEventListener('click', async (event)=>{
         console.log('click close conv');
+        let media = window.innerWidth <= 950
+
+        if(media){
+            toggleSidebar();
+            await sleep(400);
+        }
         closeConv();
     });
 }
@@ -476,7 +516,7 @@ function cancelFriendReqListeners(){
     });
 }
 function removeFriendsListeners(){
-    const buttons = document.querySelectorAll(".rmfriend-btn");
+    const buttons = document.querySelectorAll(".rm-friend-btn");
     buttons.forEach((button)=>{
         button.addEventListener('click', (event)=>{
         
@@ -485,6 +525,8 @@ function removeFriendsListeners(){
         });
     });
 }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
 function openConvListeners(){
     const buttons = document.querySelectorAll(".open-conv-btn");
     // console.log(buttons);
@@ -492,9 +534,30 @@ function openConvListeners(){
         button.addEventListener('click', (event)=>{
             const conv_id = button.id;
             console.log('[DEBUG] openConv clicked'+ conv_id);
+            let media = window.innerWidth <= 950
+            console.log('[DEBUG] openConv media : '+media)
+
+            if(media){
+                toggleSidebar();
+            }
             openConv(conv_id);
         });
     });
+}
+function changeNameListeners(){
+    let button = document.getElementById("sub-change")
+    button.addEventListener('click', ()=>{
+        changeName();
+    });
+}
+async function changeName() {
+    const name = document.getElementById('new-name').value;
+    const id = sessionStorage.getItem('sessid');
+    const sendData = {
+        name : name
+    };
+    const resData = await postRequest('http://'+IP+':8000/api/change_name/'+id, sendData);
+    console.log(resData);
 }
 async function closeConv(){
     //pprocido
@@ -554,10 +617,20 @@ async function removeFriend(friend_id) {
     if(resData.status === 'success'){
         //got conversations
         await refreshFriends();
-        }
+
+        const sendData = {
+            friend_id : friend_id
+        };
+
+        let resData = await postRequest('http://'+IP+':8000/api/get_conv_id/'+id , sendData);
+        console.log('[DEBUG] removeFriend::response :',resData)
+        const conv_id = resData.conv_id;
+        console.log('[DEBUG] conv_id,', conv_id);
+        await deleteConv(conv_id);
+    }
     else{
         //error in the backend
-        status_label.innerText = data.status;
+        status_label.innerText = resData.status;
         }
     console.log(resData)
 }
@@ -659,6 +732,12 @@ async function newFriend(){
     }else{
         status_label.innerText = resData.content;
     }
+}
+
+function toggleSidebar(){
+    let navBar = document.getElementById("sidebar");
+    navBar.style.left = navBar.style.left == "0px" ? "-100%" : "0px"
+
 }
 
 //TODO

@@ -1,5 +1,5 @@
 
-const IP ='192.168.194.138';
+const IP ='192.168.1.42';
 
 document.addEventListener("DOMContentLoaded", function() {
 
@@ -21,7 +21,6 @@ function authSessid(){
     const sessid = sessionStorage.getItem('sessid');
     //se c'è un sessid, reindirizzo alla home
     if(sessid){
-
         remember_me = sessionStorage.getItem('remember_me');
         if(remember_me){
             const data = {
@@ -82,8 +81,6 @@ function loginHandler() {
     password = document.getElementById('password').value
     remember_me = document.getElementById('remember_me').checked
     btn = document.getElementById('login-btn')
-    btn.innerText = '. . .'
-    btn.className = 'loading-btn'
     err = document.getElementById('err-text')
     //add user input check
 
@@ -116,8 +113,6 @@ function loginHandler() {
         }
         else{
             //login failed
-            btn.innerText = 'Login';
-            btn.className = 'btn';
             err.innerText= data.status;
         }
     })
@@ -247,5 +242,3 @@ function signupHandler() {
     });
 
 }
-
-

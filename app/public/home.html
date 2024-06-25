@@ -9,15 +9,22 @@
     <!-- <script src="prova.js"></script> -->
     <script src="../socket.io/socket.io.js"></script>
     <script src="chat.js"></script>
+    <!-- Link per icone -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+<!-- <style>
+    html{cursor:url("images/cursor.gif"),pointer}
+</style> -->
+
 <body>
     <div class="container">
         <!-- <audio id="notification_audio" src="https://commondatastorage.googleapis.com/codeskulptor-assets/Evillaugh.ogg" preload="auto"></audio> -->
         <!-- <audio id="notification_audio" src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/alien_shoot.wav" preload="auto"></audio> -->
         <audio id="notification_audio" src="https://www.soundjay.com/human/sounds/fart-03.mp3" preload="auto"></audio>
-        <div class="sidebar-wrapper" id="sidebar">
+
+        <div class="sidebar-wrapper" id="sidebar" style="left: 0px;">
             <div class="options">
                 <!-- <div id="search-conv"><i class="fas fa-search"></i></div> -->
                 <input type="text" id="search-bar" placeholder="Cerca...">
@@ -54,36 +61,53 @@
 
             <div class="modal-content">
                 <!-- displaya il Nome dell' utente -->
-                <img src="https://via.placeholder.com/40" alt="Profile Picture" id="manage-profile-pfp">
-                <label>Username:</label>
-                <b id="profile-name">Nome Utente</b>
-                <div>
-                    <label for="profile-pic">Upload your Profile Picture!</label>
+                <span class="close-button">&times;</span>
+                <h2>Manage Profile</h2>
+                <div id="description-profile">
+                    <p>Username:</p>
+                    <b id="profile-name">Nome Utente</b>
+                    <i class="fa-solid fa-pencil" id="change-name-btn"></i>
+                    <img src="https://via.placeholder.com/40" alt="Profile Picture" id="manage-profile-pfp">
                 </div>
-                <form action="/upload" method="POST" enctype="multipart/form-data">
-
-                    <!-- put sessid in the form along with the image -->
-                    <input type="hidden" name="sessid" id="form-image-sessid" value="">
-                    <script>
-                        var sessid = sessionStorage.getItem("sessid");
-                        document.getElementById("form-image-sessid").value = sessid;
-                    </script>
-                    <span class="close-button">&times;</span>
-                    <input type="file" name="image"  class ="browse-image-button"/>
-                    <button type="submit" class="upload-image-button">Upload</button>
-                </form>
+                <div id="upload-profile">
+                    <label for="profile-pic">Upload your Profile Picture!</label>
+                    <form action="/upload" method="POST" enctype="multipart/form-data">
+                            
+                        <!-- put sessid in the form along with the image -->
+                        <input type="hidden" name="sessid" id="form-image-sessid" value="">
+                        <script>
+                            var sessid = sessionStorage.getItem("sessid");
+                            document.getElementById("form-image-sessid").value = sessid;
+                        </script>
+                        <input type="file" name="image"  class ="browse-image-button"/>
+                        <button type="submit" class="upload-image-button">Upload</button>
+                    </form>
+                </div>
             </div> 
         </div>
         <div id="popup-newfriend" class="modal">
             <div class="modal-content">
                 <span class="close-button">&times;</span>
                 <h2>Add a new friend</h2>
-                <label for="friend-name">Insert username:</label>
-                <input type="text" id="friend-name" name="friend-name" required> 
+                <div class="input-box">
+                    <i class="fa fa-smile-o user"></i>
+                    <input type="text" id="friend-name" name="friend-name" placeholder="Insert friend name" required>
+                </div> 
                 <button id="sub-friend" class="sub-friend-button">Crea Chat</button>
                 <label id="res-friend"></label>               
             </div>
-            
+        </div>
+        <div id="popup-changename" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Insert your new Username</h2>
+                <div class="input-box">
+                    <i class="fa fa-smile-o user clickable"></i>
+                    <input type="text" id="new-name" placeholder="Insert new username" required>
+                </div> 
+                <button id="sub-change" class="sub-friend-button">Crea Chat</button>
+                <label id="res-friend"></label>               
+            </div>
         </div>
         <div id="popup-manager" class="modal">
             <div class="modal-content">
@@ -95,10 +119,19 @@
                 <div id="pending"><h2>Pending Requests</h2></div>
                 <div id="sent-req"><h2>Sent Requests</h2></div>            
             </div>
-        </div>
+        </div>  
         <div class="chat-wrapper">
-            <div class="chat-not-selected">No chat has been selected</div>
+            <div class="chat-not-selected">
+                <div class="row2">
+                    <img src="./images/logo2.jpeg">
+                </div>
+                <div class="text">
+                    <h2>Nessuna chat selezionata</h2>
+                    <p>Per visualizzare i messaggi seleziona una chat tra quelle disponibili</p>
+                </div>
+            </div>
             <div class="chat-selected">
+                <img src="./images/background_chat.jpg" class="bg-image">
                 <div class="header">
                     <i id="close-conv-btn"class="fas fa-arrow-left"></i>
                     <img src="https://via.placeholder.com/40" id="pfp-header" class="profile-pic">
@@ -119,9 +152,7 @@
                 <div class="footer">
                     <!-- <i class="fas fa-smile"></i> -->
                     <input type="text" id="new-message" placeholder="Scrivi un messaggio...">
-                    <button class="send-message-button" onclick="newMessage()">
-                        <i class="fa-solid fa-paper-plane"></i>
-                    </button>
+                    <i class="fa fa-paper-plane" onclick="newMessage()"></i>
                     <!-- <i class="fas fa-microphone"></i> -->
                 </div>
             </div>
@@ -129,36 +160,3 @@
     </div>
 </body>
 </html>
-
-
-<!-- 
-    <div class="sidebar-entry">
-        <img src="(?)"></img>
-        <label>Username + lastUpdateChat + No. Notifiche(?)</label>
-    </div>
-    
-document.getElementById("innerdiv").
-innerHTML += "<h3>Hello geeks</h3>";
-
-<div class="conv-wrapper">
-    <div class="conv-title">
-        <img src=(?)></img>
-        <label>receiver name</label>
-        <i class='bx bxs-user'></i>
-    </div>
-    <div class="message,(sender/receciver)">
-        <label>Last message + lastUpdateChat</label>
-    </div>
-    .....
-    .....
-    <div class="message,(sender/receciver)">
-        <label>Last message + lastUpdateChat</label>
-    </div>
-    <div class="">
-        <input type="text" placeholder="Write new message" id="message-input"></input>        
-    </div>
-</div>
-
-
-
- -->

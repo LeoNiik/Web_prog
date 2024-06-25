@@ -19,7 +19,7 @@ const fs = require('fs');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-const IP = '192.168.194.138'; //just for testing
+const IP = '192.168.1.42'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
@@ -55,9 +55,6 @@ app.use(fileUpload());
 
 
 io.on('connection', (socket) => {
-	console.log(`Un client si è connesso ${socket.id}`);
-	console.log('[DEBUG] onConnection::sockets - ', sockets);
-
 	// Comunica il custom socket ID al client		
 	socket.on('setCustomId', (id)=>{
 		socket.customId = id;
@@ -178,7 +175,7 @@ app.get("/api/convs/:id", async (req, res) => {
 			let time = utils.extractTime(updated_at);
 			//console.log(conversation_id,time);
 			const convName = await client.query('SELECT * FROM Users JOIN (SELECT user_id FROM Conversation_Participants WHERE conversation_id = $1) on user_id=id WHERE id!=$2', [conversation_id,user.id]);
-			console.log('[DEBUG] convName:', convName.rows);
+			//console.log('[DEBUG] convName:', convName.rows);
 			let image_src = `https://via.placeholder.com/40`;
 
 			if(fs.existsSync(`upload/${convName.rows[0].username}.png`)){
@@ -192,7 +189,6 @@ app.get("/api/convs/:id", async (req, res) => {
 				</div>\
 				<div class="notification-info">\
 					<span class="time">'+time+'</span>\
-					<span class="notifications">+</span>\
 				</div>\
 			</div>';
 		}
@@ -260,6 +256,25 @@ app.post('/api/friends/:id', async (req, res) => {
 		return res.status(500).send({status : "internal error"});
 	}
 });
+
+app.post('/api/get_conv_id/:id', async (req,res) => {
+	const id = req.params.id;
+	const  friend_id = req.body.friend_id;
+	try {
+		const user = await getUserBySessID(id)
+		if(!user){
+			return res.status(401).send({status : "User not found"});
+		}
+		const conv_id = await client.query('SELECT conversation_id FROM Conversation_Participants WHERE user_id = $1 INTERSECT SELECT conversation_id FROM Conversation_Participants WHERE user_id = $2', [user.id, friend_id]);
+		if(conv_id.rows.length === 0){
+			return res.status(401).send({status : "No conversation found"});
+		}
+		return res.status(201).send({status : "success", conv_id : conv_id.rows[0].conversation_id});
+	} catch (error) {
+		console.log('Error during get_conv_id query');
+	}
+
+});
 app.post('/api/friends/:id/accept', async (req, res) => {
 	
 	// Handle login logic here
@@ -311,7 +326,7 @@ app.post('/api/friends/:id/remove', async (req, res) => {
 		}
 		await client.query('DELETE FROM friends WHERE user_id = $1 AND friend_id = $2 AND status=$3', [user.id, friend_id,'accepted']);
 		await client.query('DELETE FROM friends WHERE friend_id = $1 AND user_id = $2 AND status=$3', [user.id, friend_id,'accepted']);
-		
+
 		return res.status(200).send({
 			status : "success",
 			content : "Friend removed"
@@ -360,7 +375,7 @@ app.get("/api/friends/:id", async (req, res) => {
 
 			console.log(element.username);
 			dinamicContent += '<div class="friend-entry"><p>'+element.username+'</p>\
-			<button id='+element.id+' class="rmfriend-btn">remove</button></div>'; 
+			<button id='+element.id+' class="rm-friend-btn">remove</button></div>'; 
 			// un div per ogni amico con un bottone remove
 			writeToContent +=  '<div class="write-to-entry" id="'+element.id+'">\
 			<img src='+image_src+' alt="Profile Picture" class="profile-pic">\
@@ -469,6 +484,21 @@ app.get("/api/friends/:id/sent", async (req, res) => {
 		return res.status(201).send({
 			status : "internal error"
 		});
+	}
+});
+
+app.post('/api/change_name/:id', async (req,res) => {
+	const sessid = req.params.id;
+	const {newname} = req.body;
+	try {
+		const user = await getUserBySessID(sessid);
+		if(!user){
+			return res.status(401).send({status : "User not found"});
+		}
+		await client.query('UPDATE Users SET username = $1 WHERE id = $2', [newname, user.id]);
+		return res.status(201).send({status : "success"});
+	} catch (error) {
+		console.log('Error during change name query');
 	}
 });
 
@@ -658,16 +688,17 @@ app.post('/api/messages', async (req,res) => {
 			const {content, timestamp,username} = element;
 			let time = utils.extractTime(timestamp);
 			// console.log(content,time);
-			let padding = 'style = "position:relative; left:10px;"';
+			let padding = 'style = "align-self:flex-start;""';
 			
+
 			if (username === user.username){
-				padding = 'style = "position:relative; left:800px;"';
+				padding = 'style = "align-self:flex-end;"';
 				
 			}
 			dinamicContent += 
 			'<div class="message" '+padding+' >\
 				<div class="message-content">\
-					<p>'+username+ ' : ' +  content + ' </p>\
+					<p><b>'+username+ '</b> : ' +  content + ' </p>\
 				</div>\
 				<div class="message-info">\
 					<span class="message-time">'+time+'</span>\
@@ -784,7 +815,6 @@ app.post('/api/convs/:id/remove', async (req,res)=>{
 	
 	let friend_sessid = await client.query('SELECT session_id FROM Users WHERE id = $1', [friend_id]);
 	friend_sessid = friend_sessid.rows[0].session_id
-	console.log('[DEBUG] api/messages::sockets - ', sockets);
 
 	if(sockets[sessid])
 		await sockets[sessid].emit('update-convs', conv_id);
@@ -833,9 +863,9 @@ app.post('/api/convs/:id/create', async (req,res) => {
 		console.log('[DEBUG] api/messages::sockets - ', sockets);
 
 		if(sockets[sessid])
-			await sockets[sessid].emit('update-convs', conv_id);
+			await sockets[sessid].emit('update-convs', null);
 		if(sockets[friend_sessid])
-			await sockets[friend_sessid].emit('update-convs', conv_id);
+			await sockets[friend_sessid].emit('update-convs', null);
 		return res.status(200).send({status : "success"});
 	} catch (error) {
 		console.log('Error during conversation creation', error);
@@ -846,7 +876,7 @@ app.post('/api/convs/:id/create', async (req,res) => {
 app.post('/api/convs/:id/search', async (req,res) => {
 	const id = req.params.id;
 	const convName = req.body.convName
-	console.log(convName);
+	console.log('[DEBUG] convName: ',convName);
 	try {
 		const user = await getUserBySessID(id);
 		if(!user){
@@ -854,11 +884,54 @@ app.post('/api/convs/:id/search', async (req,res) => {
 			return res.status(401).send({status : "User not found"});
 		}
 
-		const result = await client.query('SELECT conversation_id,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON user_id=users.id WHERE users.id != $1 AND username LIKE $2', [user.id, '%'+convName+'%']);
+		//const result = await client.query('SELECT conversation_id,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON user_id=users.id WHERE users.id != $1 AND username LIKE $2', [user.id, '%'+convName+'%']);
+		// const result = await client.query('SELECT conversation_id,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON user_id=users.id WHERE users.id = $1 ', [user.id, '%'+convName+'%']);
+		
+		const result = await client.query('SELECT conversations.id,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN Users on user_id=users.id WHERE users.id=$1',[user.id]);
+
+		console.log('[DEBUG]/api/convs/:id/search::result - '+ JSON.stringify(result.rows) );
+
+		//return the conversation as HTML
+		//TODO order the convs by lastUpdate
+		let dinamicContent = '';
+		for (const element of result.rows) {
+
+			console.log('[DEBUG] convName nel For:', convName);
+			console.log('[DEBUG] /api/convs/search::element:', JSON.stringify(element));
 
 
-		console.log('[DEBUG]/api/convs/:id/search::result - '+ JSON.stringify(result) );
-		if(result.rows.length === 0){
+			const conv_id = element.id
+			const updated_at = element.updated_at
+			console.log('{nigger}'+ conv_id)
+			//console.log('[DEBUG] element:', element);
+			let time = utils.extractTime(updated_at);
+
+			const convName_for = await client.query('SELECT username FROM Users JOIN Conversation_Participants ON user_id=users.id WHERE conversation_id = $1 AND users.id!=$2 AND username LIKE $3', [conv_id,user.id,'%'+convName+'%']);
+
+//SELECT username FROM users JOIN conversation_partecipants ON user_id=users.id WHERE conversation_id = $1 AND users.id!=$2 AND username LIKE $3,[] 
+			if(convName_for.rows.length===0){
+				continue;
+			}
+			
+
+			console.log('[DEBUG] /api/convs/search::convName:', convName_for.rows);
+			let image_src = `https://via.placeholder.com/40`;
+
+			if(fs.existsSync(`upload/${convName_for.rows[0].username}.png`)){
+				image_src = `http://${IP}:8000/upload/${convName_for.rows[0].username}.png`;
+			}
+			dinamicContent += 
+			'<div class="sidebar-entry open-conv-btn" id="'+conv_id+'">\
+				<img src='+image_src+' alt="Profile Picture" class="profile-pic">\
+				<div class="chat-info">\
+					<span class="chat-name">'+ convName_for.rows[0].username +'</span>\
+				</div>\
+				<div class="notification-info">\
+					<span class="time">'+time+'</span>\
+				</div>\
+			</div>';
+		}
+		if(dinamicContent===''){
 			return res.status(401).send(			
 				{status : "success",
 				content : 
@@ -867,33 +940,6 @@ app.post('/api/convs/:id/search', async (req,res) => {
 				</div>'
 				
 			});
-		}
-		//return the conversation as HTML
-		//TODO order the convs by lastUpdate
-		let dinamicContent = '';
-		for (const element of result.rows) {
-			const {conversation_id, updated_at} = element;
-			console.log('[DEBUG] element:', element);
-			let time = utils.extractTime(updated_at);
-			//console.log(conversation_id,time);
-			const convName = await client.query('SELECT * FROM Users JOIN (SELECT user_id FROM Conversation_Participants WHERE conversation_id = $1) on user_id=id WHERE id!=$2', [conversation_id,user.id]);
-			console.log('[DEBUG] convName:', convName.rows);
-			let image_src = `https://via.placeholder.com/40`;
-
-			if(fs.existsSync(`upload/${convName.rows[0].username}.png`)){
-				image_src = `http://${IP}:8000/upload/${convName.rows[0].username}.png`;
-			}
-			dinamicContent += 
-			'<div class="sidebar-entry open-conv-btn" id="'+conversation_id+'">\
-				<img src='+image_src+' alt="Profile Picture" class="profile-pic">\
-				<div class="chat-info">\
-					<span class="chat-name">'+ convName.rows[0].username +'</span>\
-				</div>\
-				<div class="notification-info">\
-					<span class="time">'+time+'</span>\
-					<span class="notifications">+</span>\
-				</div>\
-			</div>';
 		}
 		return res.status(201).send({
 			status : "success",
@@ -1195,3 +1241,8 @@ app.get('/home', (req,res) => {
 //SELECT 
 //INSERT INTO Conversation_Participants () VALUES ($1) [ 
 
+//SELECT conversations.id FROM Conversation JOIN conversation_partecipants ON Conversations.id=conversation_id JOIN Users on user_id=users.id WHERE users.id=$1\
+//tutte le conversazioni di cui sono partecipante
+
+
+//
