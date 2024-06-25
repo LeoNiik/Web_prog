@@ -1185,7 +1185,7 @@ app.get('/home', (req,res) => {
 	}
 	else if (req.headers.referer === 'http://' + IP + ':8000/home'){
 		//redirecto a http://' + IP + ':8000/api/auth/sessid
-		res.redirect('http://' + IP + ':8000/api/auth/sessid');
+		res.sendFile(path.join(__dirname, 'public/home.html'));
 	}
 	else{
 		res.sendFile(path.join(__dirname, 'public/no_auth.html'));
