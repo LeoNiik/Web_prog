@@ -19,7 +19,7 @@ const fs = require('fs');
 // Constants
 const PORT = 80;
 const HOST = '0.0.0.0';
-const IP = '192.168.1.25'; //just for testing
+const IP = 'gigachat.web'; //just for testing
 // DB connection
 const client = new Client({
 	user: 'postgres',
@@ -151,7 +151,7 @@ app.get("/api/convs/:id", async (req, res) => {
 				status : "Error getting current user"
 			});
 		}
-		const result = await client.query('SELECT conversation_id,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON user_id=users.id WHERE users.id = $1', [user.id]);
+		const result = await client.query('SELECT conversation_id,updated_at FROM Conversations JOIN Conversation_Participants ON Conversations.id=conversation_id JOIN users ON user_id=users.id WHERE users.id = $1 ORDER BY 2 DESC', [user.id]);
 		//console.log('[DEBUG] result:', result.rows.length);
 		if (result.rows.length === 0) {
 			return res.status(401).send({
@@ -374,7 +374,7 @@ app.get("/api/friends/:id", async (req, res) => {
 			}
 
 			console.log(element.username);
-			dinamicContent += '<div class="friend-entry"><p>'+element.username+'</p>\
+			dinamicContent += '<div class="friend-entry"><p><b>'+element.username+'</b></p>\
 			<button id='+element.id+' class="rm-friend-btn">remove</button></div>'; 
 			// un div per ogni amico con un bottone remove
 			writeToContent +=  '<div class="write-to-entry" id="'+element.id+'">\
@@ -429,7 +429,7 @@ app.get("/api/friends/:id/pending", async (req, res) => {
 
 		//return the friend requests as HTML
 		result.rows.forEach(element => {
-			dinamicContent += '<div class="friend-entry"><p>request from '+element.username+'</p><button id='+element.id+' class="acc-btn">accept</button><button id='+element.id+' class="ref-btn">refuse</button></div>'; 
+			dinamicContent += '<div class="friend-entry"><p>request from <b>'+element.username+'</b></p><button id='+element.id+' class="acc-btn">accept</button><button id='+element.id+' class="ref-btn">refuse</button></div>'; 
 		});
 		return res.status(201).send({
 			status : "success",
@@ -472,7 +472,7 @@ app.get("/api/friends/:id/sent", async (req, res) => {
 
 		//return the friend requests as HTML
 		result.rows.forEach(element => {
-			dinamicContent += '<div class="friend-entry"><p>request from '+element.username+'</p><button id='+element.id+' class="canc-btn">cancel</button></div>'; 
+			dinamicContent += '<div class="friend-sent"><div class="friend-entry"><p>request sent to <b>'+element.username+'</b></p><button id='+element.id+' class="canc-btn">cancel</button></div></div>'; 
 		});
 		return res.status(201).send({
 			status : "success",
@@ -693,7 +693,7 @@ app.post('/api/messages', async (req,res) => {
 		if(messages.rows.length === 0){
 			console.log('[DEBUG] /api/messages: No messages found');
 			return res.status(401).send({status : "success",
-				content : 'No messages Found'
+				content : '<p class="empty-mes">No messages Found</p>'
 			});
 		}
 		// console.log('[DEBUG] /api/messages::messages - '+ messages);
@@ -764,6 +764,9 @@ app.post('/api/send_message', async (req,res) => {
 		}
 		//inserisci il messaggio
 		let err = await client.query('INSERT INTO Messages (conversation_id, sender_id, content) VALUES ($1, $2, $3) RETURNING id', [conv_id.rows[0].conversation_id, sender_id, message]);
+		//updato il timestamp della conversazione tramite la query, usando il tempo del DB
+		let update_ts = await client.query('UPDATE Conversations SET updated_at = (SELECT timestamp FROM Messages WHERE id = $1) WHERE id = $2', [err.rows[0].id, conv_id.rows[0].conversation_id]);
+
 		if (err.rows.length === 0){
 			return res.status(401).send({
 				status : "error",
@@ -1068,7 +1071,7 @@ app.post('/api/signup', async (req, res) => {
 				
 
 		//invia email di verifica
-		sendEmail(email, 'Verify your email', 'Hi Mr. ' + username + '. The man who sent this e-mail is very Gay\nClick on the link to verify your email: '+ link);
+		sendEmail(email, 'Verify your email', 'Hi,' + username + '. Click on the following link to verify your account '+ link);
 		return res.status(200).send({status : "success"});
 
 	} catch (error) {

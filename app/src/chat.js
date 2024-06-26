@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     ///poroceopces//////
 }); 
 var selectedChat = 0;
-const IP = '192.168.1.25';
+const IP = 'gigachat.web';
 const socket = io('ws://'+IP+':8000');
 
 // Funzione per inizializzare la connessione
@@ -23,7 +23,9 @@ socket.on('update-messages', async (conv_id) => {
     console.log('update messages received');
     console.log(conv_id);
     await refreshMessages(conv_id);
+    await refreshConvs();
     document.getElementById('notification_audio').play();
+    
 });
 
 socket.on('update-convs', async (conv_id)=>{
@@ -173,7 +175,12 @@ async function searchConv() {
     
 }
 //prendo in input il nome dell' utente della chat e chiedo al backend la chat
-
+async function resetChangeName(){
+    let name = document.getElementById('new-name').value;
+    let resLabel = document.getElementById('new-name-status')
+    name = '';
+    resLabel.innerText =''
+}
 async function getFriends() {
     const id = sessionStorage.getItem('sessid');
     const data = await getRequest('http://' + IP + ':8000/api/friends/' + id);
@@ -372,12 +379,14 @@ function assignEventListeners() {
         
         closeButton.addEventListener('click', function () {
             modal.style.display = 'none';
+            resetChangeName();
         });
     
         // Chiudi il modal quando si clicca fuori dalla finestra del modal
         window.addEventListener('click', function (event) {
             if (event.target == modal) {
                 modal.style.display = 'none';
+                resetChangeName();
             }
         });
     }
@@ -544,6 +553,7 @@ function changeNameListeners(){
 }
 async function changeName() {
     const name = document.getElementById('new-name').value;
+    let resLabel = document.getElementById('new-name-status')
     console.log('[DEBUG] changeName::name - ' + name)
     const id = sessionStorage.getItem('sessid');
     const sendData = {
@@ -551,7 +561,6 @@ async function changeName() {
     };
     const resData = await postRequest('http://'+IP+':8000/api/change_name/'+id, sendData);
     console.log(resData);
-    let resLabel = document.getElementById('new-name-status')
     if(resData.status === 'success'){
         resLabel.innerText = resData.content;
         refreshProfile()

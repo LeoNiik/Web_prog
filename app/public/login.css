@@ -33,7 +33,6 @@ nav img {
 .navbar {
     flex: 1;
     text-align: right;
-    
 }
 
 .navbar ul li {
@@ -116,7 +115,7 @@ nav .fa {
         top: 0;
         right: 0;   /* serve per scomparire il menu su dispositivi mobile */
         text-align: left;
-        z-index: 9999;   /* non so cosa significhi */
+        z-index: 9999;
         transition: 1s;
     }
 
